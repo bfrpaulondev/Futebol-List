@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Rotações de Equipas — Champions Mobile+Desktop</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --uefa-blue-1:#0b154a;
+      --uefa-blue-2:#0a2a6b;
+      --uefa-blue-3:#041030;
+      --accent:#24c1ff;
+      --enter:#21d07a;
+      --exit:#ff5d5d;
+      --gk:#ffd83b;
+    }
+
+    html,body{height:100%}
+    body{
+      font-family:'Montserrat',sans-serif;
+      color:#e9eef7;
+      margin:0;
+      background:
+        radial-gradient(1000px 600px at 10% -20%, #142a7a 0%, transparent 60%),
+        radial-gradient(800px 600px at 110% 10%, #0b2d84 0%, transparent 60%),
+        linear-gradient(180deg, var(--uefa-blue-2) 0%, var(--uefa-blue-3) 60%, #000 100%);
+      background-attachment:fixed;
+      padding-bottom:96px;
+    }
+
+    .container-xxl{padding-left:14px;padding-right:14px;max-width:1400px}
+
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border:1px solid rgba(255,255,255,0.18);
+      backdrop-filter: blur(8px);
+      border-radius:16px;
+      box-shadow:0 8px 28px rgba(0,0,0,0.45);
+    }
+
+    .hero-title{
+      font-weight:800;
+      letter-spacing:.5px;
+      text-transform:uppercase;
+      font-size: clamp(18px, 4.5vw, 42px);
+      margin:0;
+      background: linear-gradient(90deg,#fff,#7ad9ff,#c1e9ff);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .mini{font-size:.92rem;opacity:.9}
+
+    .badge-pill{
+      border-radius:999px;
+      padding:.35rem .7rem;
+      font-weight:600;
+      font-size:.95rem;
+      display:inline-flex;           /* <<< */
+      align-items:center;            /* <<< */
+      gap:.6rem;                     /* <<< */
+    }
+    .badge-enter{background:rgba(33,208,122,.15);color:var(--enter);border:1px solid rgba(33,208,122,.45)}
+    .badge-exit{background:rgba(255,93,93,.15);color:var(--exit);border:1px solid rgba(255,93,93,.45)}
+    .badge-gk{background:rgba(255,216,59,.15);color:var(--gk);border:1px solid rgba(255,216,59,.45)}
+    .badge-label{opacity:.95}
+    .badge-name{font-weight:800;background:rgba(255,255,255,.08);padding:.1rem .6rem;border-radius:999px}
+
+    /* Container das badges no modal */
+    .changes-badges{                 /* <<< */
+      display:flex;
+      flex-wrap:wrap;
+      gap:.6rem;
+    }
+    @media (max-width: 575.98px){    /* Empilhar e alinhar nomes à direita no telemóvel */
+      .changes-badges{flex-direction:column}
+      .badge-pill{
+        width:100%;
+        justify-content:space-between;
+        white-space:normal;          /* permite quebrar a frase longa do rótulo */
+      }
+    }
+
+    .pos-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:.55rem 1rem;
+      font-weight:600;
+      font-size: clamp(14px, 3.8vw, 16px);
+    }
+    @media (min-width: 992px){
+      .pos-grid{grid-template-columns: repeat(3, 1fr)}
+    }
+    .pos-grid .label{opacity:.8}
+    .pos-grid .val{color:#fff}
+
+    .timer{
+      font-size: clamp(28px, 8vw, 72px);
+      font-weight:800;
+      letter-spacing:2px;
+      color:#fff;
+      text-shadow:0 0 18px rgba(36,193,255,.35);
+      line-height:1;
+    }
+
+    .ctl-btn{
+      border-radius:12px;
+      padding:.85rem 1.1rem;
+      font-weight:700;
+      letter-spacing:.6px;
+      width:100%;
+    }
+    .btn-uefa{
+      background: linear-gradient(135deg,#1a9cff,#0077ff);
+      border:none;
+      box-shadow:0 8px 16px rgba(0,119,255,.35);
+    }
+    .btn-stop{
+      background: linear-gradient(135deg,#ff4d6d,#c9184a);
+      border:none;
+      box-shadow:0 8px 16px rgba(255,77,109,.35);
+    }
+    .section-title{font-weight:800;letter-spacing:.3px;color:#dff3ff;font-size:clamp(16px,4.2vw,22px)}
+
+    .table-dark.table-uefa{
+      --bs-table-bg: rgba(10,20,60,.55);
+      --bs-table-striped-bg: rgba(255,255,255,.02);
+      --bs-table-striped-color:#e9eef7;
+      --bs-table-border-color: rgba(255,255,255,.15);
+    }
+    .resp-table{width:100%}
+    @media (max-width: 767.98px){
+      .resp-table thead{display:none}
+      .resp-table tbody tr{
+        display:block;
+        margin-bottom:12px;
+        border:1px solid rgba(255,255,255,.15);
+        border-radius:12px;
+        overflow:hidden;
+      }
+      .resp-table tbody td{
+        display:flex;justify-content:space-between;gap:12px;
+        padding:.55rem .75rem;
+      }
+      .resp-table tbody td::before{
+        content: attr(data-label);
+        font-weight:700;opacity:.85
+      }
+    }
+
+    .control-bar{
+      padding:.75rem .9rem;
+      border-radius:16px 16px 0 0;
+      position:fixed;left:0;right:0;
+      bottom: env(safe-area-inset-bottom);
+      z-index:1050;
+    }
+    .control-bar .row>*{margin-bottom:.5rem}
+    @media (min-width:768px){
+      body{padding-bottom:0}
+      .control-bar{position:sticky;top:0;border-radius:0 0 16px 16px;margin-bottom:16px}
+      .ctl-btn{width:auto}
+    }
+
+    .modal-content{
+      background: linear-gradient(180deg, rgba(12,24,72,.92), rgba(4,12,36,.92));
+      border:1px solid rgba(255,255,255,.15);
+      color:#e9eef7;
+    }
+    .modal-header{border-bottom-color:rgba(255,255,255,.12)}
+    .modal-footer{border-top-color:rgba(255,255,255,.12)}
+    .callout{border-left:4px solid var(--accent);padding-left:12px;margin:8px 0 18px 0;opacity:.95}
+  </style>
+</head>
+<body>
+
+  <div class="glass control-bar">
+    <div class="container-xxl">
+      <div class="row align-items-center g-2">
+        <div class="col-12 col-md-4 text-center text-md-start">
+          <div class="mini">Tempo</div>
+          <div id="timer" class="timer">07:00</div>
+          <div id="status" class="mini">Pronto</div>
+        </div>
+        <div class="col-12 col-md-8 text-center text-md-end">
+          <div class="d-flex gap-2 justify-content-center justify-content-md-end flex-wrap">
+            <button id="btnStart" class="btn btn-uefa ctl-btn">Iniciar período</button>
+            <button id="btnStop" class="btn btn-stop ctl-btn d-none">Parar</button>
+            <button id="btnShowPlan" class="btn btn-outline-light ctl-btn">Plano 6 períodos</button>
+            <button id="btnNarratorTest" class="btn btn-outline-warning ctl-btn">Testar narrador</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-xxl pt-3 pb-2">
+    <div class="text-center mb-3">
+      <h1 class="hero-title">Rotações de Equipas — Champions</h1>
+      <div class="mini">7 minutos por período. Ao fim: narrador contínuo até aplicar mudanças.</div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12 col-lg-6">
+        <div class="glass p-3">
+          <h3 class="section-title mb-2">Equipa A</h3>
+          <div class="mini mb-2">Saída: 5 → banco. Baliza roda 1 → 5.</div>
+          <div id="periodA" class="mini mb-2">Período atual: 1</div>
+
+          <div id="teamAgrid" class="pos-grid">
+            <div class="label">Baliza</div><div class="val" id="A_p1"></div>
+            <div class="label">Pos2</div>  <div class="val" id="A_p2"></div>
+            <div class="label">Pos3</div>  <div class="val" id="A_p3"></div>
+            <div class="label">Pos4</div>  <div class="val" id="A_p4"></div>
+            <div class="label">Pos5</div>  <div class="val" id="A_p5"></div>
+            <div class="label">Banco</div>  <div class="val" id="A_b"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="glass p-3">
+          <h3 class="section-title mb-2">Equipa B</h3>
+          <div class="mini mb-2">Saída: 5 → banco. Baliza roda 1 → 5.</div>
+          <div id="periodB" class="mini mb-2">Período atual: 1</div>
+
+          <div id="teamBgrid" class="pos-grid">
+            <div class="label">Baliza</div> <div class="val" id="B_p1"></div>
+            <div class="label">Pos2</div>   <div class="val" id="B_p2"></div>
+            <div class="label">Pos3</div>   <div class="val" id="B_p3"></div>
+            <div class="label">Pos4</div>   <div class="val" id="B_p4"></div>
+            <div class="label">Pos5</div>   <div class="val" id="B_p5"></div>
+            <div class="label">Banco</div>  <div class="val" id="B_b"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass p-3 mt-3 d-none" id="planWrap">
+      <h3 class="section-title mb-2">Plano dos 6 períodos</h3>
+      <div class="row g-3">
+        <div class="col-12 col-lg-6">
+          <h5 class="mb-2">Equipa A</h5>
+          <div class="table-responsive">
+            <table class="table table-dark table-striped table-uefa table-sm align-middle mb-0 resp-table">
+              <thead>
+                <tr>
+                  <th>Período</th><th>Baliza</th><th>Pos2</th><th>Pos3</th><th>Pos4</th><th>Pos5</th><th>Banco</th>
+                </tr>
+              </thead>
+              <tbody id="planA"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <h5 class="mb-2">Equipa B</h5>
+          <div class="table-responsive">
+            <table class="table table-dark table-striped table-uefa table-sm align-middle mb-0 resp-table">
+              <thead>
+              <tr>
+                <th>Período</th><th>Baliza</th><th>Pos2</th><th>Pos3</th><th>Pos4</th><th>Pos5</th><th>Banco</th>
+              </tr>
+              </thead>
+              <tbody id="planB"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Mudanças -->
+  <div class="modal fade" id="changesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Fim do período — Bola fora</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="callout mini">Banco entra na baliza. Pos5 sai para o banco. Demais posições rodam 1→5.</div>
+
+          <div class="row g-3">
+            <div class="col-12 col-lg-6">
+              <div class="glass p-3 h-100">
+                <h5 class="mb-3">Equipa A — Mudanças</h5>
+                <!-- BADGES: agora responsivo e claro no mobile -->
+                <div class="changes-badges">
+                  <span class="badge-pill badge-exit">
+                    <span class="badge-label">Sai</span>
+                    <span class="badge-name" id="A_out"></span>
+                  </span>
+                  <span class="badge-pill badge-enter">
+                    <span class="badge-label">Entra</span>
+                    <span class="badge-name" id="A_in"></span>
+                  </span>
+                  <span class="badge-pill badge-gk">
+                    <span class="badge-label">Vai para a baliza</span>
+                    <span class="badge-name" id="A_gk"></span>
+                  </span>
+                </div>
+
+                <div class="mini mt-3 mb-1">Alinhamento seguinte</div>
+                <div class="table-responsive">
+                  <table class="table table-dark table-uefa table-sm mb-0 resp-table">
+                    <thead><tr><th>Baliza</th><th>Pos2</th><th>Pos3</th><th>Pos4</th><th>Pos5</th><th>Banco</th></tr></thead>
+                    <tbody><tr id="A_next_row"></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <div class="glass p-3 h-100">
+                <h5 class="mb-3">Equipa B — Mudanças</h5>
+                <div class="changes-badges">
+                  <span class="badge-pill badge-exit">
+                    <span class="badge-label">Sai</span>
+                    <span class="badge-name" id="B_out"></span>
+                  </span>
+                  <span class="badge-pill badge-enter">
+                    <span class="badge-label">Entra</span>
+                    <span class="badge-name" id="B_in"></span>
+                  </span>
+                  <span class="badge-pill badge-gk">
+                    <span class="badge-label">Vai para a baliza</span>
+                    <span class="badge-name" id="B_gk"></span>
+                  </span>
+                </div>
+
+                <div class="mini mt-3 mb-1">Alinhamento seguinte</div>
+                <div class="table-responsive">
+                  <table class="table table-dark table-uefa table-sm mb-0 resp-table">
+                    <thead><tr><th>Baliza</th><th>Pos2</th><th>Pos3</th><th>Pos4</th><th>Pos5</th><th>Banco</th></tr></thead>
+                    <tbody><tr id="B_next_row"></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button id="btnApply" type="button" class="btn btn-uefa" data-bs-dismiss="modal">Aplicar mudanças e reiniciar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Áudio: apenas narrador. Coloque o seu ficheiro em /narrador.mp3 -->
+  <audio id="narrator" preload="auto">
+    <source src="/narrador.mp3" type="audio/mpeg"/>
+  </audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Estado inicial
+    let teamA = ['Bruno','Rodrigo','Marlon','Edson','Tiago','Hodair'];
+    let teamB = ['Brennon','Evandro','Douglas','Fernando','Rúben','Kb'];
+
+    let period = 1, periodA = 1, periodB = 1;
+    let countdown = 420, timer = null;
+    const narrator = document.getElementById('narrator');
+    const modal = new bootstrap.Modal(document.getElementById('changesModal'), {backdrop:'static', keyboard:false});
+    let pending = null;
+
+    const byId = id => document.getElementById(id);
+
+    function uiTeam(prefix, team){
+      byId(prefix+'_p1').textContent = team[0];
+      byId(prefix+'_p2').textContent = team[1];
+      byId(prefix+'_p3').textContent = team[2];
+      byId(prefix+'_p4').textContent = team[3];
+      byId(prefix+'_p5').textContent = team[4];
+      byId(prefix+'_b').textContent  = team[5];
+    }
+    function setPeriods(){
+      byId('periodA').textContent = 'Período atual: ' + periodA;
+      byId('periodB').textContent = 'Período atual: ' + periodB;
+    }
+    function clock(sec){
+      const m = String(Math.floor(sec/60)).padStart(2,'0');
+      const s = String(sec%60).padStart(2,'0');
+      return `${m}:${s}`;
+    }
+
+    // Regra de rotação: banco -> baliza, todos 1→5, pos5 -> banco
+    function previewRotation(team){
+      const [gk,p2,p3,p4,p5,bench] = team;
+      const next = [bench, gk, p2, p3, p4, p5];
+      return { next, exits:p5, enters:bench, gkNext:bench };
+    }
+
+    function renderCells(values, labels){
+      return values.map((v,i)=>`<td data-label="${labels[i]}">${v}</td>`).join('');
+    }
+
+    function applyRotation(){
+      if(!pending) return;
+      try{ narrator.pause(); narrator.loop = false; narrator.currentTime = 0; }catch(e){}
+      modal.hide();
+
+      teamA = pending.A.next;
+      teamB = pending.B.next;
+      period++; periodA++; periodB++;
+      pending = null;
+      if(period>6){ stop(); return }
+      setPeriods();
+      uiTeam('A', teamA); uiTeam('B', teamB);
+      start();
+    }
+
+    function start(){
+      clearInterval(timer);
+      countdown = 420; // 7 minutos
+      byId('timer').textContent = clock(countdown);
+      byId('status').textContent = 'Jogo em andamento';
+      byId('btnStart').classList.add('d-none');
+      byId('btnStop').classList.remove('d-none');
+
+      timer = setInterval(()=>{
+        countdown--;
+        byId('timer').textContent = clock(countdown);
+        if(countdown<=0){ endPeriod() }
+      },1000);
+    }
+
+    function endPeriod(){
+      clearInterval(timer);
+      byId('status').textContent = 'Tempo esgotado — aguarda bola sair';
+
+      // Narrador contínuo até aplicar mudanças
+      try{
+        narrator.pause();
+        narrator.currentTime = 0;
+        narrator.loop = true;
+        narrator.volume = 1.0;
+        narrator.play().catch(()=>{});
+      }catch(e){}
+
+      const prevA = previewRotation(teamA);
+      const prevB = previewRotation(teamB);
+      pending = {A:prevA,B:prevB};
+
+      byId('A_out').textContent = prevA.exits;
+      byId('A_in').textContent  = prevA.enters;
+      byId('A_gk').textContent  = prevA.gkNext;
+      byId('A_next_row').innerHTML = renderCells(prevA.next, ['Baliza','Pos2','Pos3','Pos4','Pos5','Banco']);
+
+      byId('B_out').textContent = prevB.exits;
+      byId('B_in').textContent  = prevB.enters;
+      byId('B_gk').textContent  = prevB.gkNext;
+      byId('B_next_row').innerHTML = renderCells(prevB.next, ['Baliza','Pos2','Pos3','Pos4','Pos5','Banco']);
+
+      modal.show();
+    }
+
+    function stop(){
+      clearInterval(timer);
+      try{ narrator.pause(); narrator.loop = false; }catch(e){}
+      byId('btnStart').classList.remove('d-none');
+      byId('btnStop').classList.add('d-none');
+      byId('status').textContent = period>6 ? 'Ciclo de 6 períodos concluído' : 'Parado';
+    }
+
+    function computePlan(seed, target){
+      let t = seed.slice();
+      const body = byId(target); body.innerHTML='';
+      for(let i=1;i<=6;i++){
+        const row = document.createElement('tr');
+        row.innerHTML =
+          `<td data-label="Período">${i}</td>` +
+          renderCells([t[0],t[1],t[2],t[3],t[4],t[5]], ['Baliza','Pos2','Pos3','Pos4','Pos5','Banco']);
+        body.appendChild(row);
+        t = previewRotation(t).next;
+      }
+    }
+
+    // Controlo
+    byId('btnStart').addEventListener('click', start);
+    byId('btnStop').addEventListener('click', stop);
+    byId('btnApply').addEventListener('click', applyRotation);
+    byId('btnShowPlan').addEventListener('click', ()=>{
+      computePlan(teamA,'planA'); computePlan(teamB,'planB');
+      byId('planWrap').classList.toggle('d-none');
+    });
+    byId('btnNarratorTest').addEventListener('click', ()=>{
+      try{ narrator.pause(); narrator.loop = false; narrator.currentTime = 0; narrator.play(); }catch(e){}
+    });
+
+    // Atalhos desktop
+    document.addEventListener('keydown', (e)=>{
+      if(e.code==='Space'){ e.preventDefault(); if(byId('btnStart').classList.contains('d-none')) stop(); else start(); }
+      if(e.code==='KeyN'){ try{ narrator.pause(); narrator.loop=false; narrator.currentTime=0; narrator.play(); }catch(e){} }
+    });
+
+    // Init
+    setPeriods();
+    byId('timer').textContent = clock(countdown);
+    uiTeam('A',teamA); uiTeam('B',teamB);
+  </script>
+</body>
+</html>
