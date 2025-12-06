@@ -1,0 +1,342 @@
+<!-- screen-teams.html -->
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Equipas</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0, #020617 60%);
+        color: #e5e7eb;
+      }
+
+      .phone {
+        width: 100%;
+        height: 100%;
+        padding: 10px;
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        margin-bottom: 8px;
+      }
+
+      .tag {
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(96, 165, 250, 0.8);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .stadium-card {
+        border-radius: 18px;
+        padding: 10px;
+        background: radial-gradient(circle at top, #1e293b 0, #020617 70%);
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
+        height: 60%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .mid-line {
+        position: absolute;
+        left: 50%;
+        top: 8%;
+        bottom: 8%;
+        width: 2px;
+        background: linear-gradient(to bottom, transparent, #38bdf8, transparent);
+        opacity: 0.8;
+      }
+
+      .circle {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 90px;
+        height: 90px;
+        margin-left: -45px;
+        margin-top: -45px;
+        border-radius: 999px;
+        border: 1px solid rgba(56, 189, 248, 0.7);
+      }
+
+      .team-col {
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .team-header {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1.4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2px;
+      }
+
+      .team-header span {
+        font-size: 10px;
+        opacity: 0.7;
+      }
+
+      .team-name-a {
+        color: #4ade80;
+      }
+
+      .team-name-b {
+        color: #38bdf8;
+        text-align: right;
+      }
+
+      .player-card {
+        border-radius: 11px;
+        padding: 6px 8px;
+        display: flex;
+        align-items: center;
+        font-size: 10px;
+        background: linear-gradient(
+          135deg,
+          rgba(15, 23, 42, 0.9),
+          rgba(30, 64, 175, 0.8)
+        );
+        border: 1px solid rgba(148, 163, 184, 0.5);
+      }
+
+      .player-card.sub {
+        opacity: 0.85;
+        background: linear-gradient(
+          135deg,
+          rgba(15, 23, 42, 0.9),
+          rgba(15, 118, 110, 0.8)
+        );
+      }
+
+      .overall {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: radial-gradient(circle at 30% 20%, #facc15, #ea580c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 11px;
+        margin-right: 6px;
+        color: #020617;
+      }
+
+      .info {
+        flex: 1;
+      }
+
+      .info div:first-child {
+        font-weight: 500;
+      }
+
+      .info div:last-child {
+        font-size: 9px;
+        opacity: 0.7;
+      }
+
+      .position-tag {
+        font-size: 9px;
+        padding: 3px 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(251, 191, 36, 0.8);
+        color: #fbbf24;
+      }
+
+      .ai-card {
+        margin-top: 8px;
+        border-radius: 14px;
+        padding: 10px;
+        background: linear-gradient(
+          135deg,
+          rgba(15, 23, 42, 0.9),
+          rgba(8, 47, 73, 0.9)
+        );
+        border: 1px solid rgba(56, 189, 248, 0.7);
+        font-size: 11px;
+      }
+
+      .ai-title {
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 10px;
+        margin-bottom: 4px;
+        opacity: 0.8;
+      }
+
+      .ai-body {
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone">
+      <div class="top">
+        <span class="tag">Times sorteados · AI</span>
+        <span style="opacity: 0.8; font-size: 10px;">Semana 12 · 2025</span>
+      </div>
+
+      <div class="stadium-card">
+        <div class="mid-line"></div>
+        <div class="circle"></div>
+
+        <div class="team-col">
+          <div class="team-header">
+            <div class="team-name-a">Equipa A</div>
+            <span>Rating médio 82</span>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">86</div>
+            <div class="info">
+              <div>Bruno Paulon</div>
+              <div>Defesa forte · passe 9/10</div>
+            </div>
+            <div class="position-tag">GR</div>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">83</div>
+            <div class="info">
+              <div>Ricardo Silva</div>
+              <div>Caixote de drible e remate</div>
+            </div>
+            <div class="position-tag" style="border-color:#4ade80;color:#bbf7d0;">
+              Linha
+            </div>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">80</div>
+            <div class="info">
+              <div>João Martins</div>
+              <div>Equilíbrio geral</div>
+            </div>
+            <div class="position-tag" style="border-color:#4ade80;color:#bbf7d0;">
+              Linha
+            </div>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">79</div>
+            <div class="info">
+              <div>Luís Pereira</div>
+              <div>Velocidade 9/10</div>
+            </div>
+            <div class="position-tag" style="border-color:#4ade80;color:#bbf7d0;">
+              Linha
+            </div>
+          </div>
+
+          <div class="player-card sub">
+            <div class="overall">77</div>
+            <div class="info">
+              <div>Carlos (convidado)</div>
+              <div>Suplente explosivo</div>
+            </div>
+            <div
+              class="position-tag"
+              style="border-color:#22c55e;color:#bbf7d0;"
+            >
+              Suplente
+            </div>
+          </div>
+        </div>
+
+        <div class="team-col">
+          <div class="team-header" style="justify-content: flex-end;">
+            <span>Rating médio 81</span>
+            <div class="team-name-b">Equipa B</div>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">84</div>
+            <div class="info">
+              <div>André Costa</div>
+              <div>Reflexos rápidos na baliza</div>
+            </div>
+            <div class="position-tag">GR</div>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">82</div>
+            <div class="info">
+              <div>Pedro Nunes</div>
+              <div>Forte no 1x1</div>
+            </div>
+            <div class="position-tag" style="border-color:#38bdf8;color:#bfdbfe;">
+              Linha
+            </div>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">80</div>
+            <div class="info">
+              <div>Marco Dias</div>
+              <div>Passe 8/10 · visão de jogo</div>
+            </div>
+            <div class="position-tag" style="border-color:#38bdf8;color:#bfdbfe;">
+              Linha
+            </div>
+          </div>
+
+          <div class="player-card">
+            <div class="overall">79</div>
+            <div class="info">
+              <div>Miguel Lopes</div>
+              <div>Pressão alta e raça</div>
+            </div>
+            <div class="position-tag" style="border-color:#38bdf8;color:#bfdbfe;">
+              Linha
+            </div>
+          </div>
+
+          <div class="player-card sub">
+            <div class="overall">76</div>
+            <div class="info">
+              <div>Rui Alves</div>
+              <div>Suplente multi-funções</div>
+            </div>
+            <div
+              class="position-tag"
+              style="border-color:#22c55e;color:#bbf7d0;"
+            >
+              Suplente
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-card">
+        <div class="ai-title">Comentário do coach AI</div>
+        <div class="ai-body">
+          Equipa A tem mais velocidade e finalização, ideal para contra-ataque.
+          Equipa B é mais forte na circulação de bola e organização defensiva.
+          O equilíbrio geral está 51% vs 49%, jogo promete ser pesado.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,328 @@
+<!-- screen-financas.html -->
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Finanças</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: radial-gradient(circle at top, #020617 0, #020617 70%);
+        color: #e5e7eb;
+      }
+
+      .phone {
+        width: 100%;
+        height: 100%;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        margin-bottom: 8px;
+      }
+
+      .title {
+        font-weight: 600;
+      }
+
+      .tag {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(34, 197, 94, 0.8);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 8px;
+        flex: 1;
+      }
+
+      .card {
+        border-radius: 14px;
+        background: radial-gradient(circle at top, #0b1120 0, #020617 70%);
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        padding: 10px;
+        font-size: 11px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card-title {
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 10px;
+        opacity: 0.8;
+        margin-bottom: 6px;
+      }
+
+      .saldo {
+        font-size: 22px;
+        font-weight: 700;
+        color: #4ade80;
+      }
+
+      .saldo-sub {
+        font-size: 10px;
+        opacity: 0.7;
+      }
+
+      .mini-grid {
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .mini-pill {
+        padding: 6px;
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(75, 85, 99, 0.8);
+        font-size: 10px;
+      }
+
+      .mini-pill strong {
+        display: block;
+        font-size: 11px;
+      }
+
+      .chart {
+        margin-top: 8px;
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+      }
+
+      .bar {
+        flex: 1;
+        border-radius: 4px 4px 0 0;
+        background: linear-gradient(180deg, #22c55e, #064e3b);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .bar.expense {
+        background: linear-gradient(180deg, #f97316, #7c2d12);
+      }
+
+      .bar-label {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 2px;
+        font-size: 8px;
+        color: #ecfdf5;
+      }
+
+      .table {
+        margin-top: 6px;
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        padding: 6px;
+        font-size: 10px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1.2fr 0.6fr 0.6fr;
+        gap: 4px;
+        padding: 4px 0;
+      }
+
+      .row + .row {
+        border-top: 1px solid rgba(31, 41, 55, 0.9);
+      }
+
+      .badge {
+        font-size: 9px;
+        padding: 2px 5px;
+        border-radius: 999px;
+        border: 1px solid rgba(34, 197, 94, 0.9);
+        color: #bbf7d0;
+      }
+
+      .badge.orange {
+        border-color: rgba(249, 115, 22, 0.9);
+        color: #fed7aa;
+      }
+
+      .suggestions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+      }
+
+      .sug-card {
+        border-radius: 10px;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        background: rgba(15, 23, 42, 0.96);
+        padding: 6px;
+        font-size: 10px;
+      }
+
+      .sug-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3px;
+      }
+
+      .sug-title {
+        font-weight: 500;
+      }
+
+      .vote-pill {
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(96, 165, 250, 0.9);
+        color: #bfdbfe;
+      }
+
+      .sug-body {
+        opacity: 0.8;
+      }
+
+      .footer {
+        margin-top: auto;
+        font-size: 9px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone">
+      <div class="top">
+        <div class="title">Finanças do grupo</div>
+        <div class="tag">Mensalistas & caixa</div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-title">Saldo atual</div>
+          <div class="saldo">€ 342,50</div>
+          <div class="saldo-sub">Após pagar quadra deste mês e bolas novas.</div>
+
+          <div class="mini-grid">
+            <div class="mini-pill">
+              <strong>Entradas</strong>
+              +€ 420,00
+              <br />
+              Mensalidades e extras.
+            </div>
+            <div class="mini-pill">
+              <strong>Saídas</strong>
+              -€ 190,00
+              <br />
+              Quadra, equipamentos.
+            </div>
+            <div class="mini-pill">
+              <strong>Mensalistas</strong>
+              12 ativos
+              <br />
+              10 pagos, 2 pendentes.
+            </div>
+          </div>
+
+          <div class="chart">
+            <div class="bar" style="height: 70%;">
+              <span class="bar-label">Jan</span>
+            </div>
+            <div class="bar" style="height: 80%;">
+              <span class="bar-label">Fev</span>
+            </div>
+            <div class="bar" style="height: 65%;">
+              <span class="bar-label">Mar</span>
+            </div>
+            <div class="bar expense" style="height: 60%;">
+              <span class="bar-label">Despesas</span>
+            </div>
+          </div>
+
+          <div class="table">
+            <div class="row" style="font-weight:600; opacity:0.8;">
+              <div>Descrição</div>
+              <div>Valor</div>
+              <div>Estado</div>
+            </div>
+            <div class="row">
+              <div>Mensalidade Bruno (Nov)</div>
+              <div>+€ 25,00</div>
+              <div><span class="badge">Pago</span></div>
+            </div>
+            <div class="row">
+              <div>Aluguer quadra Novembro</div>
+              <div>-€ 120,00</div>
+              <div><span class="badge orange">Pago</span></div>
+            </div>
+            <div class="row">
+              <div>Mensalidade João (Nov)</div>
+              <div>+€ 25,00</div>
+              <div><span class="badge">Pago</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sugestões de compras</div>
+
+          <div class="suggestions">
+            <div class="sug-card">
+              <div class="sug-header">
+                <div class="sug-title">Coletes novos</div>
+                <div class="vote-pill">+12 votos</div>
+              </div>
+              <div class="sug-body">
+                Trocar coletes velhos por um set azul vs laranja estilo Champions.
+              </div>
+            </div>
+
+            <div class="sug-card">
+              <div class="sug-header">
+                <div class="sug-title">Bola oficial futsal</div>
+                <div class="vote-pill">+8 votos</div>
+              </div>
+              <div class="sug-body">
+                Comprar uma bola oficial para jogos de sexta, a atual já está gasta.
+              </div>
+            </div>
+
+            <div class="sug-card">
+              <div class="sug-header">
+                <div class="sug-title">Kit de primeiros socorros</div>
+                <div class="vote-pill">+4 votos</div>
+              </div>
+              <div class="sug-body">
+                Pequeno kit com ligaduras, spray frio, etc., para lesões rápidas.
+              </div>
+            </div>
+
+            <div class="footer">
+              Cada jogador pode criar sugestões e votar. Admin muda o estado
+              para aprovada ou rejeitada conforme o saldo.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
