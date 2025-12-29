@@ -1,103 +1,14 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="pt-PT">
   <head>
     <meta charset="UTF-8" />
-    <title>Preview Web App Futebol</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        background: radial-gradient(circle at top, #102044 0, #050812 55%);
-        color: #f5f5f5;
-      }
-
-      h1 {
-        text-align: center;
-        padding: 16px;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        font-size: 20px;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-auto-rows: 1fr;
-        gap: 16px;
-        padding: 16px;
-        box-sizing: border-box;
-        height: calc(100vh - 64px);
-      }
-
-      .frame-wrapper {
-        border-radius: 16px;
-        overflow: hidden;
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        background: linear-gradient(135deg, #0b1024, #151b36);
-        display: flex;
-        flex-direction: column;
-      }
-
-      .frame-title {
-        padding: 8px 12px;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(90deg, rgba(0, 255, 200, 0.1), transparent);
-      }
-
-      iframe {
-        flex: 1;
-        width: 100%;
-        border: none;
-        background: #050812;
-      }
-
-      @media (max-width: 900px) {
-        .grid {
-          grid-template-columns: 1fr;
-          height: auto;
-        }
-        body {
-          height: auto;
-        }
-      }
-    </style>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Gestão do teu clube de futsal" />
+    <title>Futebol App - Gestão de Clube</title>
   </head>
   <body>
-    <h1>Preview Web App Futebol</h1>
-
-    <div class="grid">
-      <div class="frame-wrapper">
-        <div class="frame-title">Jogo da semana / Presenças</div>
-        <iframe src="screen-dashboard.html"></iframe>
-      </div>
-
-      <div class="frame-wrapper">
-        <div class="frame-title">Equipas sorteadas (Champions vibe)</div>
-        <iframe src="screen-teams.html"></iframe>
-      </div>
-
-      <div class="frame-wrapper">
-        <div class="frame-title">Chat em tempo real</div>
-        <iframe src="screen-chat.html"></iframe>
-      </div>
-
-      <div class="frame-wrapper">
-        <div class="frame-title">Finanças / Caixa do clube</div>
-        <iframe src="screen-financas.html"></iframe>
-      </div>
-      <div class="frame-wrapper">
-        <div class="frame-title">Sugestões / Caixa do clube</div>
-        <iframe src="screen-suggestion-form.html"></iframe>
-      </div>
-      <article class="frame-wrapper">
-        <div class="frame-title">Perfil / Caixa do clube</div>
-        <iframe src="screen-profile.html"></iframe>
-      </div>
-    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
