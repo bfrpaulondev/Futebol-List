@@ -30,10 +30,12 @@ export const Finances = () => {
         financeService.getTransactions({ limit: 10 })
       ]);
       
-      setBalance(balanceData);
-      setTransactions(transactionsData);
+      setBalance(balanceData || { current: 0, mensalistasCount: 0 });
+      setTransactions(Array.isArray(transactionsData) ? transactionsData : []);
     } catch (error) {
       console.error('[Finances] Failed to load data:', error);
+      setBalance({ current: 0, mensalistasCount: 0 });
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -41,13 +43,14 @@ export const Finances = () => {
   
   if (loading) return <Loader fullScreen message="A carregar finanças..." />;
   
-  const entradas = transactions
-    .filter(t => t.type === 'entrada')
-    .reduce((sum, t) => sum + t.amount, 0);
+  // ## calculate metrics (safe: transactions guaranteed array)
+  const entradas = (transactions || [])
+    .filter(t => t?.type === 'entrada')
+    .reduce((sum, t) => sum + (t?.amount || 0), 0);
     
-  const saidas = transactions
-    .filter(t => t.type === 'saida')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const saidas = (transactions || [])
+    .filter(t => t?.type === 'saida')
+    .reduce((sum, t) => sum + (t?.amount || 0), 0);
   
   return (
     <Container>
@@ -66,13 +69,13 @@ export const Finances = () => {
       
       <div className="flex flex-col gap-lg" style={{ paddingBottom: '100px' }}>
         {/* Balance */}
-        <BalanceCard balance={balance.current} />
+        <BalanceCard balance={balance?.current || 0} />
         
         {/* Metrics */}
         <MetricsGrid 
           entradas={entradas}
           saidas={saidas}
-          mensalistas={balance.mensalistasCount || 0}
+          mensalistas={balance?.mensalistasCount || 0}
         />
         
         {/* Transactions */}
