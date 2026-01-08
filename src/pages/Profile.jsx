@@ -25,6 +25,7 @@ export const Profile = () => {
       window.location.reload(); // Refresh to get new avatar
     } catch (error) {
       console.error('[Profile] Avatar upload failed:', error);
+      toast.error('Falha ao atualizar foto');
     } finally {
       setUploading(false);
     }
@@ -39,10 +40,23 @@ export const Profile = () => {
       window.location.reload(); // Refresh user data
     } catch (error) {
       console.error('[Profile] Update failed:', error);
+      toast.error('Falha ao atualizar perfil');
     } finally {
       setLoading(false);
     }
   };
+  
+  // ## guard: user null check
+  if (!user) {
+    return (
+      <Container>
+        <Header title="Meu Perfil" />
+        <div className="flex flex-col gap-lg" style={{ paddingBottom: '100px' }}>
+          <p className="text-center text-muted">A carregar perfil...</p>
+        </div>
+      </Container>
+    );
+  }
   
   return (
     <Container>
@@ -64,7 +78,7 @@ export const Profile = () => {
         )}
         
         {/* Skills */}
-        <SkillBars skills={user.skills} />
+        <SkillBars skills={user?.skills || []} />
         
         {/* Edit Form */}
         <ProfileForm 
