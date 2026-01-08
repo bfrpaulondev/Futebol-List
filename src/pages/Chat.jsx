@@ -63,9 +63,10 @@ export const Chat = () => {
   const loadMessages = async () => {
     try {
       const data = await chatService.getMessages('general', 100);
-      setMessages(data);
+      setMessages(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('[Chat] Failed to load messages:', error);
+      setMessages([]);
     } finally {
       setLoading(false);
     }
@@ -102,17 +103,17 @@ export const Chat = () => {
         <Header title="Chat Geral" />
         
         <div className="flex flex-col gap-sm">
-          {messages.length === 0 ? (
+          {(messages || []).length === 0 ? (
             <div className="text-center py-xl">
               <p className="text-muted">Nenhuma mensagem ainda. Começa a conversa!</p>
             </div>
           ) : (
-            messages.map((message) => (
+            (messages || []).map((message) => (
               <MessageBubble
-                key={message._id}
+                key={message?._id}
                 message={message}
-                isMe={message.author._id === user._id}
-                canDelete={message.author._id === user._id || isAdmin}
+                isMe={message?.author?._id === user?._id}
+                canDelete={message?.author?._id === user?._id || isAdmin}
                 onDelete={handleDeleteMessage}
               />
             ))
