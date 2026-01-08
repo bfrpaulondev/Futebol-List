@@ -7,12 +7,15 @@ import { ptBR } from 'date-fns/locale';
 
 // -.-.-.-
 export const GameCard = ({ game, userPresence }) => {
-  const mensalistasCount = game.attendees.filter(a => a.playerType === 'mensalista').length;
-  const grupoCount = game.attendees.filter(a => a.playerType === 'grupo').length;
-  const externosCount = game.attendees.filter(a => a.playerType === 'externo').length;
-  const waitingCount = game.waitingList.length;
+  const attendees = game?.attendees || [];
+  const waitingList = game?.waitingList || [];
   
-  const spotsLeft = game.maxPlayers - game.attendees.length;
+  const mensalistasCount = attendees.filter(a => a.playerType === 'mensalista').length;
+  const grupoCount = attendees.filter(a => a.playerType === 'grupo').length;
+  const externosCount = attendees.filter(a => a.playerType === 'externo').length;
+  const waitingCount = waitingList.length;
+  
+  const spotsLeft = (game?.maxPlayers || 12) - attendees.length;
   const isFull = spotsLeft <= 0;
   
   return (

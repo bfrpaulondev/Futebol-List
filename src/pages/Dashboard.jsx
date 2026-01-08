@@ -71,7 +71,8 @@ export const Dashboard = () => {
     );
   }
   
-  const userPresence = game.attendees.find(a => a.player._id === user._id);
+  const attendees = game?.attendees || [];
+  const userPresence = attendees.find(a => a?.player?._id === user?._id);
   
   return (
     <Container>
@@ -90,8 +91,8 @@ export const Dashboard = () => {
         
         {/* Attendees List */}
         <AttendeesList 
-          attendees={game.attendees} 
-          currentUserId={user._id}
+          attendees={attendees} 
+          currentUserId={user?._id}
         />
         
         {/* Real-time notice */}

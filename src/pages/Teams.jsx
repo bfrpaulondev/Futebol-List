@@ -81,7 +81,8 @@ export const Teams = () => {
     );
   }
   
-  const hasTeams = game.teams?.teamA?.length > 0 && game.teams?.teamB?.length > 0;
+  const hasTeams = game?.teams?.teamA?.length > 0 && game?.teams?.teamB?.length > 0;
+  const attendees = game?.attendees || [];
   
   return (
     <Container>
@@ -89,7 +90,7 @@ export const Teams = () => {
       
       <div className="flex flex-col gap-lg" style={{ paddingBottom: '100px' }}>
         {/* Draw button (admin only) */}
-        {isAdmin && !hasTeams && game.attendees.length >= 10 && (
+        {isAdmin && !hasTeams && attendees.length >= 10 && (
           <Button
             variant="primary"
             fullWidth
@@ -114,8 +115,8 @@ export const Teams = () => {
         ) : (
           <div className="text-center py-xl">
             <p className="text-muted">
-              {game.attendees.length < 10 
-                ? `Aguardar mais jogadores (${game.attendees.length}/10)`
+              {attendees.length < 10 
+                ? `Aguardar mais jogadores (${attendees.length}/10)`
                 : 'Aguardando sorteio das equipas'}
             </p>
           </div>
