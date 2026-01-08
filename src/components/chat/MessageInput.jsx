@@ -23,8 +23,15 @@ export const MessageInput = ({ onSend, loading }) => {
         padding: 'var(--space-md)',
         backgroundColor: 'rgba(15, 23, 42, 0.8)',
         borderTop: '1px solid var(--border-color)',
-        position: 'sticky',
-        bottom: 0
+
+        position: 'fixed',
+left: 0,
+right: 0,
+bottom: '72px',
+zIndex: 101,
+
+margin: '0 auto',
+        
       }}
     >
       <input
