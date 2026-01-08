@@ -41,9 +41,11 @@ export const DrawAnimated = () => {
       setGame(data);
       
       // Sort players by rating (balanced queue)
-      const sorted = [...data.attendees]
+      const attendees = data?.attendees || [];
+      const sorted = attendees
+        .filter(a => a && a.player) // Filtrar válidos
         .map(a => a.player)
-        .sort((a, b) => b.overallRating - a.overallRating);
+        .sort((a, b) => (b.overallRating || 0) - (a.overallRating || 0));
       
       setQueue(sorted);
       
@@ -232,21 +234,24 @@ export const DrawAnimated = () => {
               </p>
               
               <div className="flex flex-col gap-sm">
-                {queue.slice(currentIndex).slice(0, 5).map((player, idx) => (
-                  <div 
-                    key={player._id}
-                    className="flex items-center gap-sm p-2 rounded"
-                    style={{ 
-                      backgroundColor: idx === 0 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.4)'
-                    }}
-                  >
-                    <Avatar src={player.avatar} name={player.name} size="sm" />
-                    <div style={{ flex: 1 }}>
-                      <p className="text-xs font-semibold mb-0">{player.name}</p>
-                      <p className="text-xs text-muted">OVR {player.overallRating}</p>
+                {queue.slice(currentIndex).slice(0, 5).map((player, idx) => {
+                  if (!player) return null;
+                  return (
+                    <div 
+                      key={player._id || `queue-${idx}`}
+                      className="flex items-center gap-sm p-2 rounded"
+                      style={{ 
+                        backgroundColor: idx === 0 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.4)'
+                      }}
+                    >
+                      <Avatar src={player.avatar} name={player.name} size="sm" />
+                      <div style={{ flex: 1 }}>
+                        <p className="text-xs font-semibold mb-0">{player.name || 'Jogador'}</p>
+                        <p className="text-xs text-muted">OVR {player.overallRating || 0}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Card>
           </div>
