@@ -73,17 +73,20 @@ export const Chat = () => {
   };
   
   // -.-.-.-
-  const handleSendMessage = async (content) => {
-    setSending(true);
-    try {
-      await chatService.sendMessage(content, 'text', 'general');
-      // Message will be added via socket
-    } catch (error) {
-      console.error('[Chat] Failed to send message:', error);
-    } finally {
-      setSending(false);
+ const handleSendMessage = async (content) => {
+  setSending(true);
+  try {
+    const newMessage = await chatService.sendMessage(content, 'text', 'general');
+    // If socket is not connected, update messages state manually
+    if (!socket?.connected) {
+      setMessages(prev => [...prev, newMessage]);
     }
-  };
+  } catch (error) {
+    console.error('[Chat] Failed to send message:', error);
+  } finally {
+    setSending(false);
+  }
+};
   
   // -.-.-.-
   const handleDeleteMessage = async (messageId) => {
