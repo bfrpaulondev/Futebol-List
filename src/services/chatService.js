@@ -30,6 +30,14 @@ export const chatService = {
   // Mark as read
   markAsRead: async (messageId) => {
     const { data } = await api.post(`/chat/messages/${messageId}/read`);
+    return data;},
+  addReaction: async (messageId, emoji) => {
+    const { data } = await api.post(`/chat/messages/${messageId}/reactions`, { emoji });
     return data;
+  },
+  removeReaction: async (messageId, emoji) => {
+    const { data } = await api.delete(`/chat/messages/${messageId}/reactions/${emoji}`);
+    return data;
+  }
   }
 };
