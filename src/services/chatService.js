@@ -8,9 +8,10 @@ export const chatService = {
     const { data } = await api.get('/chat/messages', {
       params: { channel, limit }
     });
-    return data;
+    return data?.messages || [];
   },
-  
+
+
   // Send message
   sendMessage: async (content, type = 'text', channel = 'general') => {
     const { data } = await api.post('/chat/messages', {
