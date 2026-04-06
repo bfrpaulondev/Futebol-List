@@ -223,6 +223,28 @@ async function seedDatabase() {
 
   console.log('✅ 12 mensalistas criados');
 
+  // Create Palestrinha bot user
+  try {
+    await db.user.create({
+      data: {
+        email: 'palestrinha-bot@futebolbonfim.pt',
+        passwordHash: await hashPassword('no-login-bot'),
+        name: 'Palestrinha',
+        playerType: 'mensalista',
+        position: 'TREINADOR',
+        role: 'player',
+        skillsJson: '{}',
+        overallRating: 0,
+        gamesPlayed: 0,
+        mvpCount: 0,
+        notificationsEnabled: false,
+      },
+    });
+    console.log('✅ Palestrinha bot criado');
+  } catch {
+    // Bot already exists
+  }
+
   // Create game on upcoming Saturday
   const gameDate = new Date();
   const dayOfWeek = gameDate.getDay();

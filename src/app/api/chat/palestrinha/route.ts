@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 import { ensureSeeded } from '@/lib/seed-check';
 import { chatCompletion } from '@/lib/openai';
 
@@ -27,6 +28,8 @@ Regras:
 - Sê engraçado mas ofensivo
 - Se te chamarem de Palestrinha, ficas indignado "O MEU NOME É TÉCNICO PALESTRINHA!"`;
 
+const BOT_EMAIL = 'palestrinha-bot@futebolbonfim.pt';
+
 export async function POST(request: Request) {
   await ensureSeeded();
 
@@ -35,6 +38,26 @@ export async function POST(request: Request) {
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json({ error: 'Mensagem obrigatória' }, { status: 400 });
+    }
+
+    // Find or create bot user
+    let botUser = await db.user.findUnique({ where: { email: BOT_EMAIL } });
+    if (!botUser) {
+      botUser = await db.user.create({
+        data: {
+          email: BOT_EMAIL,
+          passwordHash: 'no-login-bot',
+          name: 'Palestrinha',
+          playerType: 'mensalista',
+          position: 'TREINADOR',
+          role: 'player',
+          skillsJson: '{}',
+          overallRating: 0,
+          gamesPlayed: 0,
+          mvpCount: 0,
+          notificationsEnabled: false,
+        },
+      });
     }
 
     const messages: { role: string; content: string }[] = [
@@ -64,7 +87,24 @@ export async function POST(request: Request) {
 
     const reply = await chatCompletion(messages, 0.95);
 
-    return NextResponse.json({ reply });
+    // Save bot message to DB so it persists
+    const savedMessage = await db.message.create({
+      data: {
+        content: reply,
+        authorId: botUser.id,
+        channel: 'general',
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, avatar: true },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      reply,
+      message: savedMessage,
+    });
   } catch (error: any) {
     console.error('Palestrinha error:', error);
     return NextResponse.json({

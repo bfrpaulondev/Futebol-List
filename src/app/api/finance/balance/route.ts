@@ -17,8 +17,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Utilizador não encontrado' }, { status: 404 });
     }
 
-    // Only mensalistas (or admins who are mensalistas) can access balance
-    if (user.playerType !== 'mensalista') {
+    // Mensalistas and admins can access balance
+    const isMensalista = user.playerType === 'mensalista';
+    const isAdmin = user.role === 'admin' || user.role === 'master';
+    if (!isMensalista && !isAdmin) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 

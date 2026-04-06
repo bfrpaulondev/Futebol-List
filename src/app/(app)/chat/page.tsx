@@ -23,9 +23,32 @@ interface Message {
   isPalestrinha?: boolean;
 }
 
+const CACHE_KEY = 'futebol-chat-cache';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function loadCachedMessages(): Message[] {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return [];
+    const { messages, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > CACHE_TTL) return [];
+    return messages;
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedMessages(messages: Message[]) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ messages, timestamp: Date.now() }));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
 export default function ChatPage() {
   const { user } = useAuthStore();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => loadCachedMessages());
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [palestrinhaTyping, setPalestrinhaTyping] = useState(false);
@@ -33,6 +56,7 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
+  const lastFetchIdRef = useRef<string | null>(null);
 
   // Edit/Delete state
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -44,18 +68,48 @@ export default function ChatPage() {
 
   // Track message count for toast notifications
   const prevMessageCountRef = useRef<number>(0);
+  const isInitialLoad = useRef(true);
 
   const fetchMessages = useCallback(async () => {
     try {
       const res = await fetch('/api/chat/messages');
       const data = await res.json();
-      const fetchedMessages = data.messages || [];
+      const fetchedMessages: Message[] = data.messages || [];
 
-      // Toast on new messages from others (not bot, not own)
-      if (prevMessageCountRef.current > 0 && fetchedMessages.length > prevMessageCountRef.current) {
-        const newMsgs = fetchedMessages.slice(prevMessageCountRef.current);
-        for (const msg of newMsgs) {
-          const isBot = msg.authorId === 'palestrinha-bot' || msg.isPalestrinha;
+      // Smart merge: only add truly new messages, preserve local state
+      setMessages((prev) => {
+        // Build a map of existing messages by ID
+        const existingMap = new Map(prev.map((m) => [m.id, m]));
+
+        // Track IDs that come from the server
+        const serverIds = new Set(fetchedMessages.map((m) => m.id));
+
+        // Start with all server messages (they are the source of truth)
+        const merged: Message[] = [...fetchedMessages];
+
+        // Add any local-only messages (optimistic sends not yet on server,
+        // or palestrinha messages from older response not yet on server)
+        for (const local of prev) {
+          if (!serverIds.has(local.id)) {
+            merged.push(local);
+          }
+        }
+
+        // Sort by createdAt
+        merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+        // Cache the merged result
+        saveCachedMessages(merged);
+
+        return merged;
+      });
+
+      // Toast on new messages from others (not bot, not own, not initial load)
+      const newCount = fetchedMessages.length;
+      if (!isInitialLoad.current && prevMessageCountRef.current > 0 && newCount > prevMessageCountRef.current) {
+        const newest = fetchedMessages.slice(prevMessageCountRef.current);
+        for (const msg of newest) {
+          const isBot = msg.authorId === 'palestrinha-bot' || msg.author?.id === 'palestrinha-bot';
           const isOwn = msg.authorId === user?.id;
           const isDeleted = msg.isDeleted;
           if (!isBot && !isOwn && !isDeleted) {
@@ -63,17 +117,17 @@ export default function ChatPage() {
           }
         }
       }
-      prevMessageCountRef.current = fetchedMessages.length;
 
-      setMessages(fetchedMessages);
+      prevMessageCountRef.current = newCount;
+      isInitialLoad.current = false;
     } catch {
-      // ignore
+      // Silently fail - use cached messages
     }
   }, [user?.id]);
 
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000);
+    const interval = setInterval(fetchMessages, 4000);
     return () => clearInterval(interval);
   }, [fetchMessages]);
 
@@ -117,20 +171,44 @@ export default function ChatPage() {
 
       const data = await res.json();
 
-      const botMsg: Message = {
-        id: `palestrinha-${Date.now()}`,
-        content: data.reply,
-        createdAt: new Date().toISOString(),
-        authorId: 'palestrinha-bot',
-        author: {
-          id: 'palestrinha-bot',
-          name: 'Palestrinha 🧑‍💼',
-          avatar: null,
-        },
-        isPalestrinha: true,
-      };
-
-      setMessages((prev) => [...prev, botMsg]);
+      // If server saved the message, use it. Otherwise create local version.
+      if (data.message) {
+        const botMsg: Message = {
+          id: data.message.id,
+          content: data.message.content,
+          createdAt: data.message.createdAt,
+          authorId: data.message.authorId,
+          author: data.message.author,
+          isPalestrinha: true,
+        };
+        setMessages((prev) => {
+          // Avoid duplicates
+          if (prev.some((m) => m.id === botMsg.id)) return prev;
+          const updated = [...prev, botMsg];
+          updated.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          saveCachedMessages(updated);
+          return updated;
+        });
+      } else {
+        // Fallback: local-only message
+        const botMsg: Message = {
+          id: `palestrinha-${Date.now()}`,
+          content: data.reply,
+          createdAt: new Date().toISOString(),
+          authorId: 'palestrinha-bot',
+          author: {
+            id: 'palestrinha-bot',
+            name: 'Palestrinha 🧑‍💼',
+            avatar: null,
+          },
+          isPalestrinha: true,
+        };
+        setMessages((prev) => {
+          const updated = [...prev, botMsg];
+          saveCachedMessages(updated);
+          return updated;
+        });
+      }
 
       setPalestrinhaHistory((prev) => [
         ...prev.slice(-10),
@@ -160,6 +238,7 @@ export default function ChatPage() {
       });
 
       if (res.ok) {
+        // Message saved to DB, fetch to get the server version
         await fetchMessages();
 
         if (isPalestrinhaMention(msg)) {
@@ -191,6 +270,7 @@ export default function ChatPage() {
         setMessages((prev) =>
           prev.map((m) => (m.id === editingMsgId ? { ...m, content: editContent.trim() } : m))
         );
+        saveCachedMessages(messages);
       } else {
         const data = await res.json();
         toast.error(data.error || 'Erro ao editar');
@@ -215,6 +295,7 @@ export default function ChatPage() {
               : m
           )
         );
+        saveCachedMessages(messages);
       } else {
         const data = await res.json();
         toast.error(data.error || 'Erro ao eliminar');
@@ -238,7 +319,7 @@ export default function ChatPage() {
   };
 
   const isOwnMessage = (authorId: string) => authorId === user?.id;
-  const isBotMessage = (msg: Message) => msg.isPalestrinha || msg.authorId === 'palestrinha-bot';
+  const isBotMessage = (msg: Message) => msg.isPalestrinha || msg.authorId === 'palestrinha-bot' || msg.author?.id === 'palestrinha-bot';
 
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)]">
