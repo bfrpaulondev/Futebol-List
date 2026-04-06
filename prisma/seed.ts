@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -15,7 +16,7 @@ async function seed() {
   await prisma.game.deleteMany();
   await prisma.user.deleteMany();
 
-  const hash = await Bun.password.hash('123456');
+  const hash = await bcrypt.hash('123456', 12);
 
   // Create users
   const bruno = await prisma.user.create({
