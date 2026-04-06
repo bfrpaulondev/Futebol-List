@@ -70,3 +70,24 @@ Stage Summary:
 - Hydration warning from browser extensions is suppressed
 - Hard navigation ensures middleware cookie check works properly
 - Build verified: all routes compile successfully
+
+---
+Task ID: 4
+Agent: Main
+Task: Fix Vercel deployment - add ensureSeeded to auth routes + SQL table creation
+
+Work Log:
+- Identified root cause: auth routes (login, register, me) did not call ensureSeeded()
+- On Vercel cold start, /tmp/prisma.db is empty - tables don't exist
+- Added ensureSeeded() to login, register, and me API routes
+- Rewrote seed-check.ts to create tables via raw SQL ($executeRawUnsafe) before seeding
+- Added postinstall: prisma generate to package.json
+- Added prisma db push to build script
+- Disabled Prisma query logging in production
+- Tested and confirmed: login 200, auth/me 200, dashboard 200, redirect works
+- Successfully deployed to Vercel at futebol-list.vercel.app
+
+Stage Summary:
+- Login works on Vercel production
+- Auto-seed creates tables + demo data on first cold start request
+- Full auth flow verified: login → cookie → dashboard → protected routes
