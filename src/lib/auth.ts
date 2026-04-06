@@ -1,8 +1,11 @@
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'futebol-list-secret-key-2024';
+
+// Encode secret as Uint8Array for jose
+const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 export interface TokenPayload {
   userId: string;
@@ -19,13 +22,23 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: { userId: string; email: string; role: string; playerType: string }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+export async function signToken(payload: { userId: string; email: string; role: string; playerType: string }): Promise<string> {
+  return new SignJWT(payload as unknown as import('jose').JWTPayload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(secretKey);
 }
 
-export function verifyToken(token: string): TokenPayload | null {
+export async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const { payload } = await jwtVerify(token, secretKey);
+    return {
+      userId: payload.userId as string,
+      email: payload.email as string,
+      role: payload.role as string,
+      playerType: payload.playerType as string,
+    };
   } catch {
     return null;
   }
@@ -35,7 +48,7 @@ export async function getUserFromCookie(): Promise<TokenPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('futebol-token')?.value;
   if (!token) return null;
-  return verifyToken(token);
+  return await verifyToken(token);
 }
 
 export const COOKIE_OPTIONS = {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get('futebol-token')?.value;
   const { pathname } = request.nextUrl;
 
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Decode token to check role/playerType
-  const payload = verifyToken(token);
+  const payload = await verifyToken(token);
   if (!payload) {
     // Invalid token, redirect to login
     const loginUrl = new URL('/login', request.url);
