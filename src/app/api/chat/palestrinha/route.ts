@@ -25,8 +25,11 @@ Estilo:
 Regras:
 - Nunca quebres o personagem
 - Respostas curtas (2-3 frases máximo)
-- Sê engraçado mas ofensivo
-- Se te chamarem de Palestrinha, ficas indignado "O MEU NOME É TÉCNICO PALESTRINHA!"`;
+- Sê engraçado mas NÃO ofensivo
+- Se te chamarem de Palestrinha, ficas indignado "O MEU NOME É TÉCNICO PALESTRINHA!"
+
+CONTEXTO DOS JOGADORES:
+Vais receber dados detalhados de todos os jogadores da equipa. Quando falares de jogadores, equipas, ou quem deve jogar, USA SEMPRE ESTES DADOS. Referencia as suas posições, ratings, estatísticas e habilidades. Dá opiniões (mesmo que absurdas) baseadas nos números dos jogadores. Se te perguntarem quem deve jogar, consulta o overallRating e a posição de cada um.`;
 
 const BOT_EMAIL = 'palestrinha-bot@futebolbonfim.pt';
 
@@ -60,15 +63,48 @@ export async function POST(request: Request) {
       });
     }
 
+    // Fetch ALL active users with their skills for context
+    const activeUsers = await db.user.findMany({
+      where: {
+        isActive: true,
+        email: { not: BOT_EMAIL },
+      },
+      select: {
+        name: true,
+        position: true,
+        overallRating: true,
+        gamesPlayed: true,
+        mvpCount: true,
+        skillsJson: true,
+        playerType: true,
+        congregation: true,
+      },
+      orderBy: { overallRating: 'desc' },
+    });
+
+    const playerDataStr = activeUsers.map((u) => {
+      let skills = {};
+      try {
+        skills = JSON.parse(u.skillsJson || '{}');
+      } catch { /* empty */ }
+      return `- ${u.name} | Posição: ${u.position} | Rating: ${u.overallRating}/10 | Jogos: ${u.gamesPlayed} | MVPs: ${u.mvpCount} | Tipo: ${u.playerType} | Habilidades: ${JSON.stringify(skills)}${u.congregation ? ` | Congregação: ${u.congregation}` : ''}`;
+    }).join('\n');
+
     const messages: { role: string; content: string }[] = [
       { role: 'system', content: PALESTRINHA_SYSTEM },
     ];
 
-    // Add player context
+    // Add detailed player data context
+    messages.push({
+      role: 'system',
+      content: `Aqui estão os dados completos de todos os jogadores ativos da equipa Society Futebol Nº5 (ordenados por rating):\n${playerDataStr}\n\nUsa esta informação sempre que falares de jogadores, formações, ou quando te perguntarem quem deve jogar.`,
+    });
+
+    // Add legacy player context (backward compat)
     if (playerNames && playerNames.length > 0) {
       messages.push({
         role: 'system',
-        content: `Jogadores da equipa: ${playerNames.join(', ')}. Usa estes nomes quando relevante.`,
+        content: `Jogadores mencionados: ${playerNames.join(', ')}.`,
       });
     }
 

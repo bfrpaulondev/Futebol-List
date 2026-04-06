@@ -278,23 +278,38 @@ async function seedDatabase() {
     ],
   });
 
-  // Create colete schedule for 2026
-  const months = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-  ];
+  // Create colete schedule for 2026 with exact washing order (only if not exists)
+  const existing2026 = await db.coleteSchedule.findFirst({ where: { year: 2026 } });
+  if (!existing2026) {
+    const currentMonth = new Date().getMonth(); // 0-11
+    const months2026 = [
+      { month: 'Janeiro',   monthIndex: 0,  userId: 'user-bruno',   userName: 'Bruno' },
+      { month: 'Fevereiro', monthIndex: 1,  userId: 'user-rodrigo', userName: 'Rodrigo' },
+      { month: 'Março',     monthIndex: 2,  userId: 'user-brenon',  userName: 'Brenon' },
+      { month: 'Abril',     monthIndex: 3,  userId: 'user-douglas', userName: 'Douglas' },
+      { month: 'Maio',      monthIndex: 4,  userId: 'user-david',   userName: 'David' },
+      { month: 'Junho',     monthIndex: 5,  userId: 'user-ruben',   userName: 'Rúben' },
+      { month: 'Julho',     monthIndex: 6,  userId: 'user-gabriel', userName: 'Gabriel' },
+      { month: 'Agosto',    monthIndex: 7,  userId: 'user-jesse',   userName: 'Jessé' },
+      { month: 'Setembro',  monthIndex: 8,  userId: 'user-mirko',   userName: 'Mirko' },
+      { month: 'Outubro',   monthIndex: 9,  userId: 'user-evandro', userName: 'Evandro' },
+      { month: 'Novembro',  monthIndex: 10, userId: 'user-edson',   userName: 'Edson' },
+      { month: 'Dezembro',  monthIndex: 11, userId: 'user-carlos',  userName: 'Carlos' },
+    ];
 
-  const monthsJson = months.map((month, i) => ({
-    month,
-    monthIndex: i,
-    userId: createdUsers[i % createdUsers.length].id,
-    userName: createdUsers[i % createdUsers.length].name,
-  }));
+    const monthsJson = months2026.map((m) => ({
+      ...m,
+      status: m.monthIndex < currentMonth ? 'done' : m.monthIndex === currentMonth ? 'current' : 'pending',
+    }));
 
-  await db.coleteSchedule.create({
-    data: { year: 2026, monthsJson: JSON.stringify(monthsJson) },
-  });
+    await db.coleteSchedule.create({
+      data: { year: 2026, monthsJson: JSON.stringify(monthsJson) },
+    });
 
-  console.log('✅ Calendário de coletes criado');
+    console.log('✅ Calendário de coletes 2026 criado');
+  } else {
+    console.log('ℹ️ Calendário de coletes 2026 já existe');
+  }
+
   console.log('🎉 Auto-seed complete!');
 }

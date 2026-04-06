@@ -40,21 +40,62 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { content } = await request.json();
-    if (!content || !content.trim()) {
-      return NextResponse.json({ error: 'Mensagem não pode estar vazia' }, { status: 400 });
+    const body = await request.json();
+    const { content, type, imageData, gifUrl, sticker } = body;
+
+    const messageType = type || 'text';
+
+    // Validate based on type
+    if (messageType === 'text') {
+      if (!content || !content.trim()) {
+        return NextResponse.json({ error: 'Mensagem não pode estar vazia' }, { status: 400 });
+      }
+      const trimmed = content.trim();
+      if (trimmed.length > 1000) {
+        return NextResponse.json({ error: 'Mensagem demasiado longa (máx. 1000 caracteres)' }, { status: 400 });
+      }
+    } else if (messageType === 'image') {
+      if (!imageData) {
+        return NextResponse.json({ error: 'Imagem obrigatória' }, { status: 400 });
+      }
+      // Max 5MB base64 (~6.67MB raw but we check base64 length)
+      if (imageData.length > 7_000_000) {
+        return NextResponse.json({ error: 'Imagem demasiado grande (máx. 5MB)' }, { status: 400 });
+      }
+    } else if (messageType === 'gif') {
+      if (!gifUrl) {
+        return NextResponse.json({ error: 'URL do GIF obrigatória' }, { status: 400 });
+      }
+      if (gifUrl.length > 500) {
+        return NextResponse.json({ error: 'URL do GIF demasiado longa' }, { status: 400 });
+      }
+    } else if (messageType === 'sticker') {
+      if (!sticker) {
+        return NextResponse.json({ error: 'Sticker obrigatório' }, { status: 400 });
+      }
+      if (sticker.length > 10) {
+        return NextResponse.json({ error: 'Sticker inválido' }, { status: 400 });
+      }
+    } else {
+      return NextResponse.json({ error: 'Tipo de mensagem inválido' }, { status: 400 });
     }
 
-    const trimmed = content.trim();
-
-    // Limit message length
-    if (trimmed.length > 1000) {
-      return NextResponse.json({ error: 'Mensagem demasiado longa (máx. 1000 caracteres)' }, { status: 400 });
+    // Build message content based on type
+    let messageContent = '';
+    if (messageType === 'text') {
+      messageContent = content.trim();
+    } else if (messageType === 'image') {
+      messageContent = imageData;
+    } else if (messageType === 'gif') {
+      messageContent = gifUrl;
+    } else if (messageType === 'sticker') {
+      messageContent = sticker;
     }
 
     const message = await db.message.create({
       data: {
-        content: trimmed,
+        content: messageContent,
+        type: messageType,
         authorId: payload.userId,
         channel: 'general',
       },
@@ -104,6 +145,11 @@ export async function PUT(request: Request) {
 
     if (message.isDeleted) {
       return NextResponse.json({ error: 'Mensagem eliminada' }, { status: 400 });
+    }
+
+    // Only text messages can be edited
+    if (message.type !== 'text') {
+      return NextResponse.json({ error: 'Apenas mensagens de texto podem ser editadas' }, { status: 400 });
     }
 
     // Check permissions: own message or master
@@ -169,11 +215,12 @@ export async function DELETE(request: Request) {
     }
 
     // Soft delete
-    const updated = await db.message.update({
+    const deletedContent = message.type === 'text' ? 'Esta mensagem foi eliminada' : 'Este conteúdo foi eliminado';
+    await db.message.update({
       where: { id },
       data: {
         isDeleted: true,
-        content: 'Esta mensagem foi eliminada',
+        content: deletedContent,
         updatedAt: new Date(),
       },
     });

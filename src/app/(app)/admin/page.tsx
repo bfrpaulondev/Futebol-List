@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, Crown, CheckCircle2, XCircle, Bell, Send, Clock, CreditCard, Users, Calendar, MessageSquare, Settings } from 'lucide-react';
+import { Crown, CheckCircle2, XCircle, Bell, Send, Clock, CreditCard, Users, Calendar, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface UserItem {
@@ -20,6 +19,7 @@ interface UserItem {
   role: string;
   playerType: string;
   position: string;
+  congregation?: string;
   isActive: boolean;
   overallRating: number;
 }
@@ -50,27 +50,16 @@ interface ReceiptItem {
   reviewer?: { id: string; name: string };
 }
 
-interface NotificationItem {
-  id: string;
-  userId: string;
-  type: string;
-  title: string;
-  message: string;
-  createdAt: string;
-}
-
 const MONTHS = [
   '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
 export default function AdminPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
-  const [_allNotifications, _setAllNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Game form
@@ -121,9 +110,8 @@ export default function AdminPage() {
       return;
     }
     const gameDate = new Date(dateStr);
-    // Find Wednesday before the game (game is usually Saturday)
     const dayOfWeek = gameDate.getDay();
-    let daysBefore = dayOfWeek - 3; // Wednesday
+    let daysBefore = dayOfWeek - 3;
     if (daysBefore <= 0) daysBefore += 7;
     const deadline = new Date(gameDate);
     deadline.setDate(deadline.getDate() - daysBefore);
@@ -211,23 +199,26 @@ export default function AdminPage() {
         targets = [notifUserId];
       }
 
-      await Promise.all(targets.map(userId =>
-        fetch('/api/notifications', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            type: 'general',
-            title: notifTitle.trim(),
-            message: notifMessage.trim(),
-          }),
-        })
-      ));
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userIds: targets,
+          type: 'general',
+          title: notifTitle.trim(),
+          message: notifMessage.trim(),
+        }),
+      });
 
-      setNotifMsg(`✅ Notificação enviada a ${targets.length} utilizador(es)`);
-      setNotifTitle('');
-      setNotifMessage('');
-      setNotifUserId('all');
+      if (res.ok) {
+        setNotifMsg(`✅ Notificação enviada a ${targets.length} utilizador(es)`);
+        setNotifTitle('');
+        setNotifMessage('');
+        setNotifUserId('all');
+      } else {
+        const data = await res.json();
+        setNotifMsg(data.error || 'Erro ao enviar notificações');
+      }
     } catch {
       setNotifMsg('Erro ao enviar notificações');
     } finally {
@@ -258,40 +249,39 @@ export default function AdminPage() {
 
   return (
     <div className="p-4 space-y-4">
+      {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all duration-200">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-            <Settings className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Admin Painel</h1>
-            <p className="text-zinc-500 text-xs">Futebol Bonfim</p>
-          </div>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center shrink-0">
+          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+            Admin
+            {user.role === 'master' && <Crown className="w-4 h-4 text-amber-400" />}
+          </h1>
+          <p className="text-zinc-500 text-xs truncate">Society Futebol Nº5</p>
         </div>
       </div>
 
       <Tabs defaultValue="jogos" className="w-full">
-        <TabsList className="bg-zinc-900/80 backdrop-blur-sm w-full h-auto p-1 gap-1 rounded-xl border border-zinc-800/50">
-          <TabsTrigger value="jogos" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+        <TabsList className="bg-zinc-900/80 backdrop-blur-sm w-full h-auto p-1 gap-1 rounded-xl border border-zinc-800/50 flex-wrap">
+          <TabsTrigger value="jogos" className="flex-1 min-w-[70px] text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
             <Calendar className="w-3.5 h-3.5 mr-1" />
             Jogos
           </TabsTrigger>
-          <TabsTrigger value="pagamentos" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+          <TabsTrigger value="pagamentos" className="flex-1 min-w-[70px] text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
             <CreditCard className="w-3.5 h-3.5 mr-1" />
             Pagamentos
           </TabsTrigger>
-          <TabsTrigger value="sugestoes" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+          <TabsTrigger value="sugestoes" className="flex-1 min-w-[70px] text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
             <MessageSquare className="w-3.5 h-3.5 mr-1" />
             Sugestões
           </TabsTrigger>
-          <TabsTrigger value="utilizadores" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+          <TabsTrigger value="utilizadores" className="flex-1 min-w-[70px] text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
             <Users className="w-3.5 h-3.5 mr-1" />
             Utilizadores
           </TabsTrigger>
-          <TabsTrigger value="notificacoes" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+          <TabsTrigger value="notificacoes" className="flex-1 min-w-[70px] text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
             <Bell className="w-3.5 h-3.5 mr-1" />
             Notif.
           </TabsTrigger>
