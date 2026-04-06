@@ -7,6 +7,12 @@ export async function GET() {
   await ensureSeeded();
 
   try {
+    // Require authentication to read suggestions
+    const payload = await getUserFromCookie();
+    if (!payload) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const suggestions = await db.suggestion.findMany({
       include: {
         createdBy: {

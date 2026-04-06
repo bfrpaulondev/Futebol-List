@@ -51,8 +51,9 @@ export default function ChatPage() {
   }, [messages, palestrinhaTyping]);
 
   const isPalestrinhaMention = (text: string) => {
+    // Only trigger when the message starts with @palestrinha or contains it as a standalone word/tag
     const lower = text.toLowerCase().trim();
-    return lower.includes('@palestrinha') || lower.includes('palestrinha');
+    return lower.startsWith('@palestrinha') || /\s@palestrinha($|\s)/i.test(text);
   };
 
   const triggerPalestrinha = async (userMessage: string) => {
@@ -92,8 +93,8 @@ export default function ChatPage() {
         { role: 'user', content: userMessage },
         { role: 'assistant', content: data.reply },
       ]);
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error('Palestrinha error:', err);
     } finally {
       setPalestrinhaTyping(false);
     }

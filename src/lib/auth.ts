@@ -4,6 +4,13 @@ import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'futebol-list-secret-key-2024';
 
+export interface TokenPayload {
+  userId: string;
+  email: string;
+  role: string;
+  playerType: string;
+}
+
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
@@ -12,19 +19,19 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: { userId: string; email: string; role: string }): string {
+export function signToken(payload: { userId: string; email: string; role: string; playerType: string }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function verifyToken(token: string): { userId: string; email: string; role: string } | null {
+export function verifyToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
+    return jwt.verify(token, JWT_SECRET) as TokenPayload;
   } catch {
     return null;
   }
 }
 
-export async function getUserFromCookie(): Promise<{ userId: string; email: string; role: string } | null> {
+export async function getUserFromCookie(): Promise<TokenPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('futebol-token')?.value;
   if (!token) return null;

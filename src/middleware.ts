@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('futebol-token')?.value;
@@ -22,6 +23,35 @@ export function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Decode token to check role/playerType
+  const payload = verifyToken(token);
+  if (!payload) {
+    // Invalid token, redirect to login
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const isAdmin = payload.role === 'admin';
+  const isMensalista = payload.playerType === 'mensalista';
+
+  // Protect admin routes - only admins
+  if (pathname.startsWith('/admin') && !isAdmin) {
+    const homeUrl = new URL('/', request.url);
+    return NextResponse.redirect(homeUrl);
+  }
+
+  // Protect finances routes - only mensalistas and admins
+  if (pathname.startsWith('/finances') && !isMensalista && !isAdmin) {
+    const homeUrl = new URL('/', request.url);
+    return NextResponse.redirect(homeUrl);
+  }
+
+  // Protect payments routes - only mensalistas and admins
+  if (pathname.startsWith('/payments') && !isMensalista && !isAdmin) {
+    const homeUrl = new URL('/', request.url);
+    return NextResponse.redirect(homeUrl);
   }
 
   return NextResponse.next();

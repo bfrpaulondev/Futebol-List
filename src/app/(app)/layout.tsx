@@ -7,14 +7,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import { Bell, X } from 'lucide-react';
 import Image from 'next/image';
 
-const tabs = [
-  { href: '/', label: 'Jogo', icon: '⚽' },
-  { href: '/teams', label: 'Equipas', icon: '👥' },
-  { href: '/chat', label: 'Chat', icon: '💬' },
-  { href: '/finances', label: 'Finanças', icon: '💰' },
-  { href: '/profile', label: 'Perfil', icon: '👤' },
-];
-
 interface Notification {
   id: string;
   type: string;
@@ -31,6 +23,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Build tabs dynamically based on user role
+  const getTabs = () => {
+    const isMensalista = user?.playerType === 'mensalista' || user?.role === 'admin';
+    const baseTabs = [
+      { href: '/', label: 'Jogo', icon: '⚽' },
+      { href: '/teams', label: 'Equipas', icon: '👥' },
+      { href: '/chat', label: 'Chat', icon: '💬' },
+    ];
+    if (isMensalista) {
+      baseTabs.push({ href: '/finances', label: 'Finanças', icon: '💰' });
+    }
+    baseTabs.push({ href: '/profile', label: 'Perfil', icon: '👤' });
+    return baseTabs;
+  };
+
+  const tabs = getTabs();
 
   const fetchNotifCount = useCallback(async () => {
     try {
@@ -62,6 +71,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
   }, [isLoading, user, router]);
+
+  // Redirect convidados away from restricted pages
+  useEffect(() => {
+    if (!user || isLoading) return;
+    const isMensalista = user.playerType === 'mensalista' || user.role === 'admin';
+    const isAdmin = user.role === 'admin';
+
+    if (pathname.startsWith('/finances') && !isMensalista) {
+      router.replace('/');
+    }
+    if (pathname.startsWith('/payments') && !isMensalista) {
+      router.replace('/');
+    }
+    if (pathname.startsWith('/admin') && !isAdmin) {
+      router.replace('/');
+    }
+  }, [user, isLoading, pathname, router]);
 
   const handleOpenNotifications = async () => {
     setShowNotifications(true);

@@ -17,6 +17,15 @@ export async function POST(
 
     const { id } = await params;
 
+    // Get the game to check if teams have been drawn
+    const game = await db.game.findUnique({
+      where: { id },
+    });
+
+    if (!game) {
+      return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
+    }
+
     // Delete the attendee
     const deleted = await db.gameAttendee.deleteMany({
       where: { gameId: id, userId: payload.userId },
@@ -26,16 +35,23 @@ export async function POST(
       return NextResponse.json({ error: 'Não estás inscrito neste jogo' }, { status: 404 });
     }
 
-    // Clear teams if drawn
-    await db.game.update({
-      where: { id },
-      data: { teamsJson: '{}', aiCoachComment: null },
-    });
+    // Only clear teams if they were actually drawn (teamsJson is not empty/default)
+    const teamsDrawn = game.teamsJson && game.teamsJson !== '{}' && game.teamsJson !== 'null';
+    if (teamsDrawn) {
+      await db.game.update({
+        where: { id },
+        data: { teamsJson: '{}', aiCoachComment: null },
+      });
+    }
 
     // Auto-promote first person from waiting list to confirmed
+    // Sort by priority first (mensalistas=1 before convidados=2), then by confirmedAt
     const waitingAttendees = await db.gameAttendee.findMany({
       where: { gameId: id, status: 'waiting' },
-      orderBy: { confirmedAt: 'asc' },
+      orderBy: [
+        { priority: 'asc' },
+        { confirmedAt: 'asc' },
+      ],
       include: {
         user: {
           select: { id: true, name: true },

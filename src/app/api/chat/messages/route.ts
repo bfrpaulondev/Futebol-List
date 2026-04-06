@@ -7,6 +7,12 @@ export async function GET() {
   await ensureSeeded();
 
   try {
+    // Require authentication to read messages
+    const payload = await getUserFromCookie();
+    if (!payload) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const messages = await db.message.findMany({
       where: { isDeleted: false, channel: 'general' },
       include: {
@@ -39,9 +45,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Mensagem não pode estar vazia' }, { status: 400 });
     }
 
+    const trimmed = content.trim();
+
+    // Limit message length
+    if (trimmed.length > 1000) {
+      return NextResponse.json({ error: 'Mensagem demasiado longa (máx. 1000 caracteres)' }, { status: 400 });
+    }
+
     const message = await db.message.create({
       data: {
-        content: content.trim(),
+        content: trimmed,
         authorId: payload.userId,
         channel: 'general',
       },

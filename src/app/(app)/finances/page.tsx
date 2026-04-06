@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, CreditCard, TrendingUp, TrendingDown, Users } from 'lucide-react';
+import { Plus, CreditCard, TrendingUp, TrendingDown, Users, ShieldX } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -28,24 +29,50 @@ interface FinanceData {
 
 export default function FinancesPage() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const [data, setData] = useState<FinanceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch('/api/finance/balance');
+      if (res.status === 401 || res.status === 403) {
+        setError('Acesso negado');
+        setData(null);
+        setLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        setError('Erro ao carregar dados');
+        setLoading(false);
+        return;
+      }
       const json = await res.json();
-      setData(json);
+      if (json.error) {
+        setError(json.error);
+        setData(null);
+      } else {
+        setError(null);
+        setData(json);
+      }
     } catch {
-      // ignore
+      setError('Erro de ligação');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (user) {
+      if (user.playerType !== 'mensalista' && user.role !== 'admin') {
+        setError('Acesso restrito a mensalistas');
+        setLoading(false);
+        return;
+      }
+      fetchData();
+    }
+  }, [user, fetchData]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
@@ -61,6 +88,31 @@ export default function FinancesPage() {
     );
   }
 
+  // Access denied screen
+  if (error) {
+    return (
+      <div className="p-4">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center mb-4">
+            <ShieldX className="w-8 h-8 text-rose-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Acesso Restrito</h2>
+          <p className="text-zinc-400 text-sm mb-6 max-w-[250px]">
+            {error === 'Acesso restrito a mensalistas'
+              ? 'A área de finanças é exclusiva para mensalistas do Futebol Bonfim.'
+              : 'Não tens permissão para aceder a esta página.'}
+          </p>
+          <Button
+            onClick={() => router.push('/')}
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl px-6 transition-all duration-200"
+          >
+            Voltar ao Início
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -69,14 +121,12 @@ export default function FinancesPage() {
           <p className="text-zinc-500 text-sm mt-0.5">Futebol Bonfim</p>
         </div>
         <div className="flex gap-2">
-          {user?.playerType === 'mensalista' && (
-            <Link href="/payments">
-              <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-all duration-200">
-                <CreditCard className="w-4 h-4 mr-1" />
-                Pagamento
-              </Button>
-            </Link>
-          )}
+          <Link href="/payments">
+            <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-all duration-200">
+              <CreditCard className="w-4 h-4 mr-1" />
+              Pagamento
+            </Button>
+          </Link>
           <Link href="/suggestions">
             <Button variant="outline" size="sm" className="border-zinc-700/50 text-zinc-300 hover:bg-zinc-800/50 transition-all duration-200">
               <Plus className="w-4 h-4 mr-1" />

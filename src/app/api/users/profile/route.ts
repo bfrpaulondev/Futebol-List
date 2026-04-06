@@ -50,14 +50,16 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { name, phone, playerType, position, notificationsEnabled } = body;
+    const { name, phone, position, notificationsEnabled } = body;
+
+    // SECURITY: playerType and role are NOT allowed to be changed by the user
+    // Only admins can change playerType/role via admin routes
 
     const user = await db.user.update({
       where: { id: payload.userId },
       data: {
         ...(name && { name }),
         ...(phone !== undefined && { phone }),
-        ...(playerType && { playerType }),
         ...(position && { position }),
         ...(notificationsEnabled !== undefined && { notificationsEnabled }),
       },

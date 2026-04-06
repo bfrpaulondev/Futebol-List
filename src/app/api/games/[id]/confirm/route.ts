@@ -29,6 +29,11 @@ export async function POST(
       return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
     }
 
+    // Check if game is still open for confirmations
+    if (game.status === 'closed' || game.status === 'completed') {
+      return NextResponse.json({ error: 'As confirmações estão fechadas para este jogo' }, { status: 400 });
+    }
+
     // Check if already registered
     const existingAttendee = game.attendees.find((a) => a.userId === payload.userId);
     if (existingAttendee) {
@@ -45,23 +50,28 @@ export async function POST(
     const isMensalista = user.playerType === 'mensalista';
     const isBeforeDeadline = deadline ? now < deadline : false;
 
-    // Count confirmed attendees
+    // Count confirmed and total attendees
     const confirmedCount = game.attendees.filter((a) => a.status === 'confirmed').length;
     const totalOnList = game.attendees.length;
 
-    if (totalOnList >= game.maxPlayers) {
-      return NextResponse.json({ error: 'Lista de espera está cheia' }, { status: 400 });
-    }
-
-    // Determine status
+    // Determine status with proper priority logic
     let status: 'confirmed' | 'waiting';
 
     if (isMensalista && isBeforeDeadline) {
-      // Mensalista before deadline: confirmed if < 12 confirmed
-      status = confirmedCount < 12 ? 'confirmed' : 'waiting';
+      // Mensalista BEFORE Wednesday 12h: always confirmed, even if >12 (others go to waiting)
+      status = 'confirmed';
     } else {
-      // Convidado OR mensalista past deadline: confirmed if < 12, otherwise waiting
-      status = confirmedCount < 12 ? 'confirmed' : 'waiting';
+      // Convidado OR mensalista AFTER deadline: confirmed only if < 12 confirmed, otherwise waiting
+      status = confirmedCount < game.maxPlayers ? 'confirmed' : 'waiting';
+    }
+
+    // If mensalista confirms after deadline and there are already 12, but some are convidados,
+    // we don't bump them - just goes to waiting list like everyone else
+    // But before deadline, mensalista always gets a spot
+
+    // Check total list capacity (confirmed + waiting)
+    if (totalOnList >= game.maxPlayers + 5) {
+      return NextResponse.json({ error: 'A lista de espera está cheia' }, { status: 400 });
     }
 
     const priority = isMensalista ? 1 : 2;
