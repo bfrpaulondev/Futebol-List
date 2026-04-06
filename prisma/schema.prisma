@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String
+  name                 String
+  phone                String?
+  playerType           String    @default("grupo")
+  position             String    @default("ALA")
+  avatar               String?
+  role                 String    @default("player")
+  skillsJson           String    @default("{}")
+  overallRating        Float     @default(5.0)
+  gamesPlayed          Int       @default(0)
+  mvpCount             Int       @default(0)
+  notificationsEnabled Boolean   @default(true)
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  gameAttendees   GameAttendee[]
+  messagesSent    Message[]
+  suggestions     Suggestion[]
+  ratingsGiven    Rating[]       @relation("Rater")
+  ratingsReceived Rating[]       @relation("Rated")
+}
+
+model Game {
+  id             String         @id @default(cuid())
+  date           DateTime
+  location       String         @default("Pavilhão Municipal")
+  maxPlayers     Int            @default(12)
+  status         String         @default("open")
+  attendees      GameAttendee[]
+  teamsJson      String         @default("{}")
+  scoreA         Int            @default(0)
+  scoreB         Int            @default(0)
+  aiCoachComment String?
+  ratingsOpen    Boolean        @default(false)
+  ratingsCloseAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model GameAttendee {
+  id          String   @id @default(cuid())
+  gameId      String
+  userId      String
+  playerType  String   @default("grupo")
+  priority    Int      @default(2)
+  confirmedAt DateTime @default(now())
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  type      String   @default("text")
+  channel   String   @default("general")
+  authorId  String
+  isDeleted Boolean  @default(false)
+  readByJson String  @default("[]")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id          String    @id @default(cuid())
+  type        String
+  amount      Float
+  category    String
+  description String
+  isPaid      Boolean   @default(false)
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Suggestion {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  estimatedCost Float
+  category      String
+  isPriority    Boolean  @default(false)
+  votesJson     String   @default("[]")
+  status        String   @default("em-analise")
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id            String   @id @default(cuid())
+  gameId        String
+  ratedPlayerId String
+  raterId       String
+  scoresJson    String
+  createdAt     DateTime @default(now())
+
+  @@unique([gameId, raterId, ratedPlayerId])
+  rater         User     @relation("Rater", fields: [raterId], references: [id], onDelete: Cascade)
+  ratedPlayer   User     @relation("Rated", fields: [ratedPlayerId], references: [id], onDelete: Cascade)
+}
+
+model ColeteSchedule {
+  id        String   @id @default(cuid())
+  year      Int
+  monthsJson String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
