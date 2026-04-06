@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword, signToken, COOKIE_OPTIONS } from '@/lib/auth';
+import { ensureSeeded } from '@/lib/seed-check';
 
 export async function POST(request: Request) {
   try {
+    await ensureSeeded();
     const { email, password } = await request.json();
 
     if (!email || !password) {
