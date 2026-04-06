@@ -183,20 +183,20 @@ async function seedDatabase() {
 
   const hash = await hashPassword('123456');
 
-  // Create the 12 mensalistas
+  // Deterministic IDs so JWT tokens survive cold starts (Vercel ephemeral SQLite)
   const players = [
-    { email: 'carlos@test.com', name: 'Carlos', congregation: 'Baixa da Banheira', position: 'ALA' },
-    { email: 'mirko@test.com', name: 'Mirko', congregation: 'Monte Belo', position: 'ALA' },
-    { email: 'rodrigo@test.com', name: 'Rodrigo', congregation: 'Setúbal Bonfim', position: 'DEF' },
-    { email: 'edson@test.com', name: 'Edson', congregation: 'Setúbal Bonfim', position: 'ALA' },
-    { email: 'douglas@test.com', name: 'Douglas', congregation: 'Setúbal Bonfim', position: 'PIVO' },
-    { email: 'evandro@test.com', name: 'Evandro', congregation: 'Baixa da Banheira', position: 'DEF' },
-    { email: 'bruno@test.com', name: 'Bruno', congregation: 'Setúbal Bonfim', position: 'ALA' },
-    { email: 'ruben@test.com', name: 'Rúben', congregation: 'Palmela', position: 'GR' },
-    { email: 'brenon@test.com', name: 'Brenon', congregation: 'Setúbal Bonfim', position: 'PIVO' },
-    { email: 'gabriel@test.com', name: 'Gabriel', congregation: 'Setúbal Norte', position: 'ALA' },
-    { email: 'david@test.com', name: 'David', congregation: 'Setúbal Bonfim', position: 'DEF' },
-    { email: 'jesse@test.com', name: 'Jessé', congregation: 'Setúbal Bonfim', position: 'ALA' },
+    { id: 'user-carlos',   email: 'carlos@test.com',   name: 'Carlos',   congregation: 'Baixa da Banheira', position: 'ALA' },
+    { id: 'user-mirko',    email: 'mirko@test.com',    name: 'Mirko',    congregation: 'Monte Belo',       position: 'ALA' },
+    { id: 'user-rodrigo',  email: 'rodrigo@test.com',  name: 'Rodrigo',  congregation: 'Setúbal Bonfim',   position: 'DEF',  role: 'admin' },
+    { id: 'user-edson',    email: 'edson@test.com',    name: 'Edson',    congregation: 'Setúbal Bonfim',   position: 'ALA',  role: 'admin' },
+    { id: 'user-douglas',  email: 'douglas@test.com',  name: 'Douglas',  congregation: 'Setúbal Bonfim',   position: 'PIVO' },
+    { id: 'user-evandro',  email: 'evandro@test.com',  name: 'Evandro',  congregation: 'Baixa da Banheira',position: 'DEF' },
+    { id: 'user-bruno',    email: 'bruno@test.com',    name: 'Bruno',    congregation: 'Setúbal Bonfim',   position: 'ALA',  role: 'master' },
+    { id: 'user-ruben',    email: 'ruben@test.com',    name: 'Rúben',    congregation: 'Palmela',          position: 'GR' },
+    { id: 'user-brenon',   email: 'brenon@test.com',   name: 'Brenon',   congregation: 'Setúbal Bonfim',   position: 'PIVO' },
+    { id: 'user-gabriel',  email: 'gabriel@test.com',  name: 'Gabriel',  congregation: 'Setúbal Norte',    position: 'ALA' },
+    { id: 'user-david',    email: 'david@test.com',    name: 'David',    congregation: 'Setúbal Bonfim',   position: 'DEF',  role: 'admin' },
+    { id: 'user-jesse',    email: 'jesse@test.com',    name: 'Jessé',    congregation: 'Setúbal Bonfim',   position: 'ALA' },
   ];
 
   const createdUsers = [];
@@ -204,13 +204,14 @@ async function seedDatabase() {
     const p = players[i];
     const user = await db.user.create({
       data: {
+        id: p.id,
         email: p.email,
         passwordHash: hash,
         name: p.name,
         congregation: p.congregation,
         playerType: 'mensalista',
         position: p.position,
-        role: i === 2 || i === 3 ? 'admin' : i === 6 ? 'master' : i === 10 ? 'admin' : 'player', // Rodrigo(2), Edson(3), David(10)=admin; Bruno(6)=master
+        role: (p as any).role || 'player',
         skillsJson: JSON.stringify({ defense: 6, attack: 6, passing: 6, technique: 6, stamina: 6 }),
         overallRating: 5.0,
         gamesPlayed: 0,
@@ -227,6 +228,7 @@ async function seedDatabase() {
   try {
     await db.user.create({
       data: {
+        id: 'user-palestrinha-bot',
         email: 'palestrinha-bot@futebolbonfim.pt',
         passwordHash: await hashPassword('no-login-bot'),
         name: 'Palestrinha',
