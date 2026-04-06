@@ -2,6 +2,25 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getUserFromCookie } from '@/lib/auth';
 import { ensureSeeded } from '@/lib/seed-check';
+import { chatCompletion } from '@/lib/openai';
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+interface PlayerInfo {
+  userId: string;
+  name: string;
+  position: string;
+  overallRating: number;
+  playerType: string;
+  avatar: string | null;
+}
 
 export async function POST(
   request: Request,
@@ -27,7 +46,6 @@ export async function POST(
         attendees: {
           where: { status: 'confirmed' },
           include: { user: true },
-          orderBy: { confirmedAt: 'asc' },
         },
       },
     });
@@ -36,56 +54,136 @@ export async function POST(
       return NextResponse.json({ error: 'Jogo precisa de pelo menos 2 jogadores confirmados' }, { status: 400 });
     }
 
-    // Shuffle only confirmed attendees
-    const shuffled = [...game.attendees].sort(() => Math.random() - 0.5);
-    const mid = Math.ceil(shuffled.length / 2);
+    // Separate goalkeepers from field players
+    const goalkeepers = game.attendees.filter((a) => a.user.position === 'GR');
+    const fieldPlayers = game.attendees.filter((a) => a.user.position !== 'GR');
 
-    const teamA = shuffled.slice(0, mid).map((a) => ({
+    const shuffledGKs = shuffle(goalkeepers);
+    const shuffledField = shuffle(fieldPlayers);
+
+    const teamA: PlayerInfo[] = [];
+    const teamB: PlayerInfo[] = [];
+
+    // Helper to build player info
+    const toPlayer = (a: typeof game.attendees[0], overridePos?: string): PlayerInfo => ({
       userId: a.user.id,
       name: a.user.name,
-      position: a.user.position,
+      position: overridePos || a.user.position,
       overallRating: a.user.overallRating,
       playerType: a.user.playerType,
       avatar: a.user.avatar,
-    }));
+    });
 
-    const teamB = shuffled.slice(mid).map((a) => ({
-      userId: a.user.id,
-      name: a.user.name,
-      position: a.user.position,
-      overallRating: a.user.overallRating,
-      playerType: a.user.playerType,
-      avatar: a.user.avatar,
-    }));
+    // GK logic
+    if (shuffledGKs.length >= 2) {
+      // Pick 2 GKs, randomly assign A or B
+      const [gk1, gk2] = shuffledGKs;
+      if (Math.random() < 0.5) {
+        teamA.push(toPlayer(gk1));
+        teamB.push(toPlayer(gk2));
+      } else {
+        teamB.push(toPlayer(gk1));
+        teamA.push(toPlayer(gk2));
+      }
+    } else if (shuffledGKs.length === 1) {
+      // 1 GK goes to Team A
+      teamA.push(toPlayer(shuffledGKs[0]));
+      // Best rated field player from team B pool becomes GK
+      // We'll assign after shuffling field players
+    }
+    // If 0 GKs, 2 random field players will become GKs later
 
-    // Generate AI coach comment using z-ai-web-dev-sdk
+    // Distribute field players alternately: A, B, A, B...
+    const remainingField = [...shuffledField];
+    let turnA = teamA.length <= teamB.length; // start with the smaller team
+
+    // If we have 0 GKs, first 2 field players become GKs
+    if (shuffledGKs.length === 0) {
+      if (remainingField.length >= 2) {
+        const gkA = remainingField.shift()!;
+        const gkB = remainingField.shift()!;
+        // Randomly assign which GK goes to which team
+        if (Math.random() < 0.5) {
+          teamA.push(toPlayer(gkA, 'GR'));
+          teamB.push(toPlayer(gkB, 'GR'));
+        } else {
+          teamB.push(toPlayer(gkA, 'GR'));
+          teamA.push(toPlayer(gkB, 'GR'));
+        }
+      }
+    }
+
+    // If only 1 GK, assign best rated field player to Team B as GK
+    if (shuffledGKs.length === 1 && remainingField.length > 0) {
+      // Sort remaining field by rating desc, pick the best for GK on Team B
+      remainingField.sort((a, b) => b.user.overallRating - a.user.overallRating);
+      const gkB = remainingField.shift()!;
+      teamB.push(toPlayer(gkB, 'GR'));
+    }
+
+    // Re-shuffle remaining field players for fairness
+    const finalRemaining = shuffle(remainingField);
+
+    // Fill teams alternately, cap at 6 per team
+    let idx = 0;
+    while (idx < finalRemaining.length && (teamA.length < 6 || teamB.length < 6)) {
+      const p = finalRemaining[idx];
+      if (teamA.length < teamB.length) {
+        teamA.push(toPlayer(p));
+      } else if (teamB.length < teamA.length) {
+        teamB.push(toPlayer(p));
+      } else {
+        // Equal: alternate starting with A
+        if (teamA.length < 6) {
+          teamA.push(toPlayer(p));
+        } else if (teamB.length < 6) {
+          teamB.push(toPlayer(p));
+        }
+      }
+      idx++;
+    }
+
+    // Reserves: remaining players beyond 6v6
+    const reserves: PlayerInfo[] = [];
+    while (idx < finalRemaining.length) {
+      reserves.push(toPlayer(finalRemaining[idx]));
+      idx++;
+    }
+
+    // Generate AI coach commentary
     let aiCoachComment = '';
     try {
-      const ZAI = (await import('z-ai-web-dev-sdk')).default;
-      const zai = await ZAI.create();
-      const teamANames = teamA.map((p) => p.name).join(', ');
-      const teamBNames = teamB.map((p) => p.name).join(', ');
-      const completion = await zai.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: 'És um treinador de futsal português. Dá uma opinião curta e motivadora sobre as equipas formadas (2-3 frases). Responde em português.',
-          },
-          {
-            role: 'user',
-            content: `Sorteio de equipas para futsal:\nEquipa Verde: ${teamANames}\nEquipa Azul: ${teamBNames}\nDá uma opinião sobre o equilíbrio das equipas.`,
-          },
-        ],
-      });
-      aiCoachComment = completion.choices[0]?.message?.content || '';
+      const teamANames = teamA.map((p) => `${p.name} (${p.position})`).join(', ');
+      const teamBNames = teamB.map((p) => `${p.name} (${p.position})`).join(', ');
+      const reserveNames = reserves.length > 0
+        ? `Suplentes: ${reserves.map((p) => p.name).join(', ')}`
+        : '';
+
+      aiCoachComment = await chatCompletion([
+        {
+          role: 'system',
+          content:
+            'És um treinador de futsal português apaixonado. Dá uma opinião curta e motivadora sobre as equipas formadas (3-4 frases). Menciona nomes de jogadores e posições. Sê entusiasmado mas realista. Responde em português de Portugal.',
+        },
+        {
+          role: 'user',
+          content: `Sorteio de equipas para futsal 6v6:\nEquipa Verde: ${teamANames}\nEquipa Azul: ${teamBNames}\n${reserveNames}\nDá uma opinião sobre o equilíbrio das equipas e destaca aspetos táticos.`,
+        },
+      ], 0.9);
     } catch {
       aiCoachComment = 'Bom jogo a todos! Que vença o melhor! ⚽';
     }
 
+    const teamsData = {
+      teamA,
+      teamB,
+      reserves: reserves.length > 0 ? reserves : undefined,
+    };
+
     const updated = await db.game.update({
       where: { id },
       data: {
-        teamsJson: JSON.stringify({ teamA, teamB }),
+        teamsJson: JSON.stringify(teamsData),
         aiCoachComment,
         status: 'confirmed',
       },

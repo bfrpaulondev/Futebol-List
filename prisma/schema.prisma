@@ -62,6 +62,7 @@ model GameAttendee {
   priority    Int      @default(2)
   status      String   @default("confirmed")
   confirmedAt DateTime @default(now())
+  arrivedAt   DateTime?
   game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

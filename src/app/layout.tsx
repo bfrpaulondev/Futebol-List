@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: "Futebol Bonfim - Gestão de Clube",
   description: "App de gestão do Futebol Bonfim - confirmações, equipas, chat e finanças",
   icons: {
-    icon: "⚽",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

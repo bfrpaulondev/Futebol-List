@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Image from 'next/image';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -52,9 +53,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Logo Area */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <span className="text-3xl">⚽</span>
-          </div>
+          <Image src="/logo.png" alt="Futebol Bonfim" width={80} height={80} className="rounded-2xl mx-auto mb-4 shadow-lg shadow-emerald-500/20" />
           <h1 className="text-3xl font-bold text-white tracking-tight">Futebol Bonfim</h1>
           <p className="text-zinc-500 mt-1 text-sm">Cria a tua conta</p>
         </div>

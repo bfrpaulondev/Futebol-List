@@ -63,6 +63,7 @@ async function ensureTables() {
       "priority" INTEGER NOT NULL DEFAULT 2,
       "status" TEXT NOT NULL DEFAULT 'confirmed',
       "confirmedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "arrivedAt" DATETIME,
       CONSTRAINT "GameAttendee_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
       CONSTRAINT "GameAttendee_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { Bell, X } from 'lucide-react';
+import Image from 'next/image';
 
 const tabs = [
   { href: '/', label: 'Jogo', icon: '⚽' },
@@ -80,9 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center animate-pulse">
-            <span className="text-lg">⚽</span>
-          </div>
+          <Image src="/logo.png" alt="Futebol Bonfim" width={40} height={40} className="rounded-xl animate-pulse" />
           <div className="text-zinc-500 text-sm">A carregar...</div>
         </div>
       </div>
