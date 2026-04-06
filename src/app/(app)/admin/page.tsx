@@ -555,6 +555,7 @@ export default function AdminPage() {
                       {u.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                     </div>
                     <p className="text-zinc-500 text-xs truncate">{u.email}</p>
+                    {u.congregation && <p className="text-zinc-600 text-[10px] truncate">⛪ {u.congregation}</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

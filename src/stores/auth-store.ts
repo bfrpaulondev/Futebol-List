@@ -5,6 +5,7 @@ export interface User {
   email: string;
   name: string;
   phone?: string | null;
+  congregation?: string | null;
   playerType: string;
   position: string;
   avatar: string | null;

@@ -6,7 +6,7 @@ import { ensureSeeded } from '@/lib/seed-check';
 export async function POST(request: Request) {
   try {
     await ensureSeeded();
-    const { name, email, password, playerType, position } = await request.json();
+    const { name, email, password, playerType, position, congregation } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Nome, email e senha são obrigatórios' }, { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         passwordHash,
         playerType: finalPlayerType,
         position: position || 'ALA',
+        ...(congregation && { congregation }),
       },
     });
 
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
         playerType: user.playerType,
         position: user.position,
         role: user.role,
+        congregation: user.congregation,
         avatar: user.avatar,
       },
     });

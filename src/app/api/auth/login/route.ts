@@ -29,6 +29,7 @@ export async function POST(request: Request) {
         id: user.id,
         email: user.email,
         name: user.name,
+        congregation: user.congregation,
         playerType: user.playerType,
         position: user.position,
         role: user.role,

@@ -22,6 +22,7 @@ export async function GET() {
         avatar: true,
         playerType: true,
         position: true,
+        congregation: true,
         overallRating: true,
         gamesPlayed: true,
         mvpCount: true,

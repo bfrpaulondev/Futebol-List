@@ -23,6 +23,7 @@ export async function GET() {
         email: user.email,
         name: user.name,
         phone: user.phone,
+        congregation: user.congregation,
         playerType: user.playerType,
         position: user.position,
         role: user.role,
@@ -50,7 +51,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { name, phone, position, notificationsEnabled } = body;
+    const { name, phone, congregation, position, notificationsEnabled } = body;
 
     // SECURITY: playerType and role are NOT allowed to be changed by the user
     // Only admins can change playerType/role via admin routes
@@ -60,6 +61,7 @@ export async function PUT(request: Request) {
       data: {
         ...(name && { name }),
         ...(phone !== undefined && { phone }),
+        ...(congregation !== undefined && { congregation }),
         ...(position && { position }),
         ...(notificationsEnabled !== undefined && { notificationsEnabled }),
       },
@@ -71,6 +73,7 @@ export async function PUT(request: Request) {
         email: user.email,
         name: user.name,
         phone: user.phone,
+        congregation: user.congregation,
         playerType: user.playerType,
         position: user.position,
         role: user.role,

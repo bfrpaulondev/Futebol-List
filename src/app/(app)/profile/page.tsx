@@ -22,6 +22,7 @@ export default function ProfilePage() {
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
+  const [congregation, setCongregation] = useState(user?.congregation || '');
   const [playerType, setPlayerType] = useState(user?.playerType || 'convidado');
   const [position, setPosition] = useState(user?.position || 'ALA');
   const [notifications, setNotifications] = useState(user?.notificationsEnabled ?? true);
@@ -44,6 +45,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           name: name.trim(),
           phone: phone.trim() || null,
+          congregation: congregation.trim() || null,
           playerType,
           position,
           notificationsEnabled: notifications,
@@ -96,6 +98,9 @@ export default function ProfilePage() {
               </AvatarFallback>
             </Avatar>
             <h2 className="text-xl font-bold text-white">{user.name}</h2>
+            {user.congregation && (
+              <p className="text-zinc-400 text-sm mt-1">⛪ {user.congregation}</p>
+            )}
             <div className="flex items-center justify-center gap-2 mt-2">
               <Badge variant="outline" className={`text-xs ${
                 user.playerType === 'mensalista'
@@ -183,6 +188,15 @@ export default function ProfilePage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="912 345 678"
+                className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-zinc-300 text-sm">Congregação</Label>
+              <Input
+                value={congregation}
+                onChange={(e) => setCongregation(e.target.value)}
+                placeholder="Ex: Setúbal Bonfim"
                 className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
               />
             </div>

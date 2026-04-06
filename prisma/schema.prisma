@@ -13,6 +13,7 @@ model User {
   passwordHash         String
   name                 String
   phone                String?
+  congregation         String?
   playerType           String           @default("convidado")
   position             String           @default("ALA")
   avatar               String?

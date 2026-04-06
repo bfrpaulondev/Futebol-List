@@ -25,6 +25,7 @@ export async function GET() {
         email: user.email,
         name: user.name,
         phone: user.phone,
+        congregation: user.congregation,
         playerType: user.playerType,
         position: user.position,
         role: user.role,

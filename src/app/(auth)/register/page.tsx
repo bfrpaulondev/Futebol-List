@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [congregation, setCongregation] = useState('');
   const [playerType, setPlayerType] = useState('convidado');
   const [position, setPosition] = useState('ALA');
   const [error, setError] = useState('');
@@ -29,7 +30,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, playerType, position }),
+        body: JSON.stringify({ name, email, password, playerType, position, congregation }),
       });
 
       const data = await res.json();
@@ -100,6 +101,17 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="congregation" className="text-zinc-300 text-sm">Congregação</Label>
+                <Input
+                  id="congregation"
+                  placeholder="Ex: Setúbal Bonfim"
+                  value={congregation}
+                  onChange={(e) => setCongregation(e.target.value)}
+                  className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
                 />
               </div>
 
