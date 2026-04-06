@@ -17,6 +17,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email já registrado' }, { status: 409 });
     }
 
+    // Validate playerType
+    const validPlayerTypes = ['mensalista', 'convidado'];
+    const finalPlayerType = playerType || 'convidado';
+    if (!validPlayerTypes.includes(finalPlayerType)) {
+      return NextResponse.json({ error: 'Tipo de jogador inválido. Use mensalista ou convidado.' }, { status: 400 });
+    }
+
     const passwordHash = await hashPassword(password);
 
     const user = await db.user.create({
@@ -24,7 +31,7 @@ export async function POST(request: Request) {
         name,
         email,
         passwordHash,
-        playerType: playerType || 'grupo',
+        playerType: finalPlayerType,
         position: position || 'ALA',
       },
     });

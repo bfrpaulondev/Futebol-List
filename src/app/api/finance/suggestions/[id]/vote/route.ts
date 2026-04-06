@@ -21,6 +21,11 @@ export async function POST(
       return NextResponse.json({ error: 'Sugestão não encontrada' }, { status: 404 });
     }
 
+    // Only allow voting if votingOpen is true
+    if (!suggestion.votingOpen) {
+      return NextResponse.json({ error: 'Votação não está aberta para esta sugestão' }, { status: 403 });
+    }
+
     const votes: string[] = JSON.parse(suggestion.votesJson || '[]');
     const userId = payload.userId;
 

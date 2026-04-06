@@ -56,7 +56,7 @@ export default function ColetesPage() {
     return (
       <div className="p-4 space-y-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-20 bg-zinc-900 rounded-xl animate-pulse" />
+          <div key={i} className="h-24 glass-card rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -65,28 +65,33 @@ export default function ColetesPage() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all duration-200">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-white">Calendário de Coletes</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Calendário de Coletes</h1>
+          <p className="text-zinc-500 text-sm mt-0.5">Responsáveis mensais</p>
+        </div>
       </div>
 
-      <Card className="bg-gradient-to-r from-emerald-600/10 to-teal-600/10 border-emerald-800/30">
-        <CardContent className="p-4 text-center">
+      <div className="glass-card rounded-2xl shadow-lg shadow-black/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 p-4 text-center">
           <h2 className="text-lg font-bold text-white">Responsáveis {schedule?.year || 2025}</h2>
           <p className="text-zinc-400 text-sm mt-1">Quem leva os coletes em cada mês</p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Months Grid */}
       <div className="grid grid-cols-3 gap-3">
         {months.map((m) => {
           const isCurrentMonth = m.monthIndex === currentMonth;
           return (
-            <Card
+            <div
               key={m.monthIndex}
-              className={`bg-zinc-900 ${
-                isCurrentMonth ? 'border-emerald-500 ring-1 ring-emerald-500/50' : 'border-zinc-800'
+              className={`glass-card rounded-2xl transition-all duration-200 ${
+                isCurrentMonth
+                  ? 'ring-1 ring-emerald-500/50 shadow-lg shadow-emerald-500/10'
+                  : 'hover:bg-zinc-800/60'
               }`}
             >
               <CardContent className="p-3 text-center">
@@ -94,35 +99,38 @@ export default function ColetesPage() {
                   {m.month}
                 </p>
                 <Avatar className="w-10 h-10 mx-auto mb-1.5">
-                  <AvatarFallback className="bg-zinc-800 text-zinc-300 text-sm">
+                  <AvatarFallback className={`text-sm ${isCurrentMonth ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-300'}`}>
                     {(m.user?.name || m.userName).split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
-                <p className="text-white text-xs font-medium truncate">
+                <p className={`text-xs font-medium truncate ${isCurrentMonth ? 'text-white' : 'text-zinc-400'}`}>
                   {(m.user?.name || m.userName).split(' ')[0]}
                 </p>
+                {isCurrentMonth && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mx-auto mt-1.5 online-dot" />
+                )}
               </CardContent>
-            </Card>
+            </div>
           );
         })}
       </div>
 
       {/* Info */}
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <span className="text-lg">ℹ️</span>
-            <div>
-              <p className="text-zinc-300 text-sm">
-                A responsabilidade dos coletes roda entre os jogadores do grupo e mensalistas ao longo do ano.
-              </p>
-              <p className="text-zinc-500 text-xs mt-1">
-                O mês atual está destacado em verde.
-              </p>
-            </div>
+      <div className="glass-card rounded-2xl shadow-lg shadow-black/10 p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center shrink-0">
+            <span className="text-sm">ℹ️</span>
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <p className="text-zinc-300 text-sm">
+              A responsabilidade dos coletes roda entre os jogadores do clube ao longo do ano.
+            </p>
+            <p className="text-zinc-500 text-xs mt-1">
+              O mês atual está destacado em verde.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

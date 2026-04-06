@@ -35,7 +35,17 @@ export async function GET(
       return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json({ game });
+    const confirmed = game.attendees.filter((a) => a.status === 'confirmed');
+    const waiting = game.attendees.filter((a) => a.status === 'waiting');
+
+    return NextResponse.json({
+      game: {
+        ...game,
+        attendees: undefined,
+        confirmed,
+        waiting,
+      },
+    });
   } catch (error) {
     console.error('Get game error:', error);
     return NextResponse.json({ error: 'Erro ao buscar jogo' }, { status: 500 });

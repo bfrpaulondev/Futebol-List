@@ -22,6 +22,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não podes avaliar-te a ti próprio' }, { status: 400 });
     }
 
+    // Only allow rating CONFIRMED attendees (not waiting list)
+    const attendee = await db.gameAttendee.findUnique({
+      where: {
+        gameId_userId: {
+          gameId,
+          userId: ratedPlayerId,
+        },
+      },
+    });
+
+    if (!attendee || attendee.status !== 'confirmed') {
+      return NextResponse.json({ error: 'Só podes avaliar jogadores confirmados' }, { status: 400 });
+    }
+
     // Upsert rating
     const rating = await db.rating.upsert({
       where: {

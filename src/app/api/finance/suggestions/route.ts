@@ -46,6 +46,8 @@ export async function POST(request: Request) {
         category: category || 'Geral',
         isPriority: isPriority || false,
         votesJson: JSON.stringify([]),
+        approvalsJson: JSON.stringify([]),
+        votingOpen: false,
         status: 'em-analise',
         createdById: payload.userId,
       },

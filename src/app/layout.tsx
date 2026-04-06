@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Futebol List - Gestão de Clube",
-  description: "App de gestão de clube de futsal - confirmações, equipas, chat e finanças",
+  title: "Futebol Bonfim - Gestão de Clube",
+  description: "App de gestão do Futebol Bonfim - confirmações, equipas, chat e finanças",
   icons: {
     icon: "⚽",
   },

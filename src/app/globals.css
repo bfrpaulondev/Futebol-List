@@ -120,3 +120,98 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Premium gradient button animation */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.btn-gradient-animated {
+  background: linear-gradient(135deg, #34d399, #14b8a6, #06b6d4, #34d399);
+  background-size: 300% 300%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* Premium scrollbar */
+.scrollbar-premium::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-premium::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-premium::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.3);
+  border-radius: 100px;
+}
+.scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 122, 0.5);
+}
+
+/* Glow effect for skill bars */
+.skill-glow {
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.3), 0 0 16px rgba(20, 184, 166, 0.15);
+}
+
+/* Pulse notification */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.notification-pulse {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Online indicator */
+.online-dot {
+  box-shadow: 0 0 0 2px #18181b, 0 0 6px rgba(52, 211, 153, 0.4);
+}
+
+/* Glassmorphic card base */
+.glass-card {
+  background: rgba(24, 24, 27, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(39, 39, 42, 0.5);
+}
+
+/* Premium gradient border */
+.gradient-border-emerald {
+  position: relative;
+}
+.gradient-border-emerald::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #34d399, #14b8a6);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.gradient-border-sky {
+  position: relative;
+}
+.gradient-border-sky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Radial gradient auth background */
+.auth-bg {
+  background: radial-gradient(ellipse at center, rgba(6, 78, 59, 0.12) 0%, #09090b 70%);
+}

@@ -16,13 +16,23 @@ export async function POST(
     }
 
     const { id } = await params;
-    const game = await db.game.findUnique({ where: { id } });
+    const game = await db.game.findUnique({
+      where: { id },
+      include: {
+        attendees: {
+          orderBy: { confirmedAt: 'asc' },
+        },
+      },
+    });
+
     if (!game) {
       return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
     }
 
-    if (game.attendees.length >= game.maxPlayers) {
-      return NextResponse.json({ error: 'Jogo está cheio' }, { status: 400 });
+    // Check if already registered
+    const existingAttendee = game.attendees.find((a) => a.userId === payload.userId);
+    if (existingAttendee) {
+      return NextResponse.json({ error: 'Já confirmaste presença', attendee: existingAttendee }, { status: 409 });
     }
 
     const user = await db.user.findUnique({ where: { id: payload.userId } });
@@ -30,12 +40,39 @@ export async function POST(
       return NextResponse.json({ error: 'Utilizador não encontrado' }, { status: 404 });
     }
 
+    const now = new Date();
+    const deadline = game.confirmationDeadline ? new Date(game.confirmationDeadline) : null;
+    const isMensalista = user.playerType === 'mensalista';
+    const isBeforeDeadline = deadline ? now < deadline : false;
+
+    // Count confirmed attendees
+    const confirmedCount = game.attendees.filter((a) => a.status === 'confirmed').length;
+    const totalOnList = game.attendees.length;
+
+    if (totalOnList >= game.maxPlayers) {
+      return NextResponse.json({ error: 'Lista de espera está cheia' }, { status: 400 });
+    }
+
+    // Determine status
+    let status: 'confirmed' | 'waiting';
+
+    if (isMensalista && isBeforeDeadline) {
+      // Mensalista before deadline: confirmed if < 12 confirmed
+      status = confirmedCount < 12 ? 'confirmed' : 'waiting';
+    } else {
+      // Convidado OR mensalista past deadline: confirmed if < 12, otherwise waiting
+      status = confirmedCount < 12 ? 'confirmed' : 'waiting';
+    }
+
+    const priority = isMensalista ? 1 : 2;
+
     const attendee = await db.gameAttendee.create({
       data: {
         gameId: id,
         userId: payload.userId,
         playerType: user.playerType,
-        priority: user.playerType === 'mensalista' ? 1 : user.playerType === 'grupo' ? 2 : 3,
+        priority,
+        status,
       },
     });
 

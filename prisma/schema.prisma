@@ -8,54 +8,59 @@ datasource db {
 }
 
 model User {
-  id                   String    @id @default(cuid())
-  email                String    @unique
+  id                   String           @id @default(cuid())
+  email                String           @unique
   passwordHash         String
   name                 String
   phone                String?
-  playerType           String    @default("grupo")
-  position             String    @default("ALA")
+  playerType           String           @default("convidado")
+  position             String           @default("ALA")
   avatar               String?
-  role                 String    @default("player")
-  skillsJson           String    @default("{}")
-  overallRating        Float     @default(5.0)
-  gamesPlayed          Int       @default(0)
-  mvpCount             Int       @default(0)
-  notificationsEnabled Boolean   @default(true)
-  isActive             Boolean   @default(true)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  role                 String           @default("player")
+  skillsJson           String           @default("{}")
+  overallRating        Float            @default(5.0)
+  gamesPlayed          Int              @default(0)
+  mvpCount             Int              @default(0)
+  notificationsEnabled Boolean          @default(true)
+  isActive             Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
-  gameAttendees   GameAttendee[]
-  messagesSent    Message[]
-  suggestions     Suggestion[]
-  ratingsGiven    Rating[]       @relation("Rater")
-  ratingsReceived Rating[]       @relation("Rated")
+  gameAttendees      GameAttendee[]
+  messagesSent       Message[]
+  suggestions        Suggestion[]
+  ratingsGiven       Rating[]          @relation("Rater")
+  ratingsReceived    Rating[]          @relation("Rated")
+  paymentReceipts    PaymentReceipt[]
+  notifications      Notification[]
+  receivedReceipts   PaymentReceipt[]  @relation("ReceiptReviewer")
 }
 
 model Game {
-  id             String         @id @default(cuid())
-  date           DateTime
-  location       String         @default("Pavilhão Municipal")
-  maxPlayers     Int            @default(12)
-  status         String         @default("open")
-  attendees      GameAttendee[]
-  teamsJson      String         @default("{}")
-  scoreA         Int            @default(0)
-  scoreB         Int            @default(0)
-  aiCoachComment String?
-  ratingsOpen    Boolean        @default(false)
-  ratingsCloseAt DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                  String         @id @default(cuid())
+  date                DateTime
+  location            String         @default("Pavilhão Municipal")
+  maxPlayers          Int            @default(12)
+  status              String         @default("open")
+  confirmationDeadline DateTime?
+  attendees           GameAttendee[]
+  teamsJson           String         @default("{}")
+  scoreA              Int            @default(0)
+  scoreB              Int            @default(0)
+  aiCoachComment      String?
+  ratingsOpen         Boolean        @default(false)
+  ratingsCloseAt      DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 }
 
 model GameAttendee {
   id          String   @id @default(cuid())
   gameId      String
   userId      String
-  playerType  String   @default("grupo")
+  playerType  String   @default("convidado")
   priority    Int      @default(2)
+  status      String   @default("confirmed")
   confirmedAt DateTime @default(now())
   game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -96,6 +101,8 @@ model Suggestion {
   category      String
   isPriority    Boolean  @default(false)
   votesJson     String   @default("[]")
+  approvalsJson String   @default("[]")
+  votingOpen    Boolean  @default(false)
   status        String   @default("em-analise")
   createdById   String
   createdAt     DateTime @default(now())
@@ -122,4 +129,32 @@ model ColeteSchedule {
   monthsJson String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PaymentReceipt {
+  id           String    @id @default(cuid())
+  userId       String
+  month        Int
+  year         Int
+  amount       Float
+  imageData    String
+  status       String    @default("pending")
+  reviewedById String?
+  reviewNote   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewer     User?     @relation("ReceiptReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

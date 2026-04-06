@@ -26,7 +26,8 @@ interface Game {
   id: string;
   date: string;
   location: string;
-  attendees: GameAttendee[];
+  confirmed: GameAttendee[];
+  waiting: GameAttendee[];
 }
 
 const SKILLS = [
@@ -64,7 +65,7 @@ export default function RateSkillsPage() {
     fetchGame();
   }, [fetchGame]);
 
-  const teammates = game?.attendees.filter((a) => a.userId !== user?.id) || [];
+  const teammates = game?.confirmed.filter((a) => a.userId !== user?.id) || [];
 
   const setRating = (userId: string, skill: string, value: number) => {
     setRatings((prev) => ({
@@ -111,7 +112,7 @@ export default function RateSkillsPage() {
     return (
       <div className="p-4 space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-zinc-900 rounded-xl animate-pulse" />
+          <div key={i} className="h-24 glass-card rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -120,75 +121,76 @@ export default function RateSkillsPage() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all duration-200">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-white">Avaliar Jogadores</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Avaliar Jogadores</h1>
+          <p className="text-zinc-500 text-sm mt-0.5">Futebol Bonfim</p>
+        </div>
       </div>
 
       {/* Game Info */}
       {game && (
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">📅</span>
-              <div>
-                <p className="text-white font-medium capitalize">{formatDate(game.date)}</p>
-                <p className="text-zinc-500 text-sm">{game.location}</p>
-              </div>
+        <div className="glass-card rounded-2xl shadow-lg shadow-black/20 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
+              <span className="text-lg">📅</span>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-white font-medium capitalize">{formatDate(game.date)}</p>
+              <p className="text-zinc-500 text-sm">{game.location}</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Teammates */}
       <div className="space-y-4">
         {teammates.map((teammate) => (
-          <Card key={teammate.userId} className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-10 h-10">
-                  <AvatarFallback className="bg-zinc-800 text-zinc-300">
-                    {teammate.user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-white font-semibold text-sm">{teammate.user.name}</p>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs bg-zinc-800 text-zinc-400 border-zinc-700">
-                      {teammate.user.position}
-                    </Badge>
-                    <span className="text-zinc-500 text-xs">OVR {teammate.user.overallRating}</span>
-                  </div>
+          <div key={teammate.userId} className="glass-card rounded-2xl shadow-lg shadow-black/10 p-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10">
+                <AvatarFallback className="bg-zinc-800 text-zinc-300">
+                  {teammate.user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-white font-semibold text-sm">{teammate.user.name}</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-zinc-800/80 text-zinc-400 border-zinc-700/50">
+                    {teammate.user.position}
+                  </Badge>
+                  <span className="text-zinc-500 text-xs">OVR {teammate.user.overallRating}</span>
                 </div>
               </div>
-              <div className="space-y-3">
-                {SKILLS.map((skill) => {
-                  const value = ratings[teammate.userId]?.[skill.key] || 5;
-                  return (
-                    <div key={skill.key}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-zinc-400">{skill.label}</span>
-                        <span className="text-xs font-bold text-teal-400">{value}</span>
-                      </div>
-                      <Slider
-                        value={[value]}
-                        onValueChange={([v]) => setRating(teammate.userId, skill.key, v)}
-                        min={1}
-                        max={10}
-                        step={1}
-                        className="w-full"
-                      />
+            </div>
+            <div className="space-y-3">
+              {SKILLS.map((skill) => {
+                const value = ratings[teammate.userId]?.[skill.key] || 5;
+                return (
+                  <div key={skill.key}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-zinc-400">{skill.label}</span>
+                      <span className="text-xs font-bold text-emerald-400 w-6 text-right">{value}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    <Slider
+                      value={[value]}
+                      onValueChange={([v]) => setRating(teammate.userId, skill.key, v)}
+                      min={1}
+                      max={10}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         ))}
 
         {teammates.length === 0 && (
-          <p className="text-zinc-500 text-center py-8">Sem colegas para avaliar neste jogo</p>
+          <p className="text-zinc-600 text-center py-8">Sem colegas para avaliar neste jogo</p>
         )}
       </div>
 
@@ -197,7 +199,7 @@ export default function RateSkillsPage() {
         <Button
           onClick={handleSubmit}
           disabled={!allRated || submitting}
-          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-5"
+          className="w-full btn-gradient-animated text-white py-5 transition-all duration-200 shadow-lg shadow-emerald-500/20 font-semibold"
         >
           {submitting ? 'A enviar...' : allRated ? '✅ Submeter Avaliações' : `Avaliar ${teammates.length} jogadores`}
         </Button>

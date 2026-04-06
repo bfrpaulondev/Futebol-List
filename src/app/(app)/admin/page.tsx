@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Crown, CheckCircle, XCircle } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ArrowLeft, Crown, CheckCircle2, XCircle, Bell, Send, Clock, CreditCard, Users, Calendar, MessageSquare, Settings } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface UserItem {
@@ -19,14 +21,7 @@ interface UserItem {
   playerType: string;
   position: string;
   isActive: boolean;
-}
-
-interface GameItem {
-  id: string;
-  date: string;
-  location: string;
-  status: string;
-  maxPlayers: number;
+  overallRating: number;
 }
 
 interface SuggestionItem {
@@ -35,33 +30,78 @@ interface SuggestionItem {
   description: string;
   status: string;
   votesJson: string;
+  approvalsJson: string;
+  votingOpen: boolean;
   createdAt: string;
-  createdBy: { name: string };
+  createdBy: { id: string; name: string };
 }
+
+interface ReceiptItem {
+  id: string;
+  userId: string;
+  month: number;
+  year: number;
+  amount: number;
+  imageData: string;
+  status: string;
+  reviewNote: string | null;
+  createdAt: string;
+  user: { id: string; name: string; email: string };
+  reviewer?: { id: string; name: string };
+}
+
+interface NotificationItem {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  createdAt: string;
+}
+
+const MONTHS = [
+  '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
 
 export default function AdminPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [users, setUsers] = useState<UserItem[]>([]);
-  const [games, setGames] = useState<GameItem[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
+  const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
+  const [_allNotifications, _setAllNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // New game form
+  // Game form
   const [newGameDate, setNewGameDate] = useState('');
   const [newGameLocation, setNewGameLocation] = useState('Pavilhão Municipal de Setúbal');
+  const [newGameDeadline, setNewGameDeadline] = useState('');
   const [creatingGame, setCreatingGame] = useState(false);
+  const [gameMsg, setGameMsg] = useState('');
+
+  // Notification form
+  const [notifUserId, setNotifUserId] = useState('all');
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifMessage, setNotifMessage] = useState('');
+  const [sendingNotif, setSendingNotif] = useState(false);
+  const [notifMsg, setNotifMsg] = useState('');
+
+  // Review
+  const [rejectNote, setRejectNote] = useState('');
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [usersRes, gamesRes, suggestionsRes] = await Promise.all([
+      const [usersRes, suggestionsRes, receiptsRes] = await Promise.all([
         fetch('/api/users/leaderboard').then(r => r.json()).then(d => d.users || []),
-        Promise.resolve([]),
         fetch('/api/finance/suggestions').then(r => r.json()),
+        fetch('/api/payments/receipts').then(r => r.json()),
       ]);
 
       setUsers(usersRes as UserItem[]);
       setSuggestions(suggestionsRes.suggestions || []);
+      setReceipts(receiptsRes.receipts || []);
     } catch {
       // ignore
     } finally {
@@ -73,46 +113,69 @@ export default function AdminPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleToggleAdmin = async (userId: string) => {
-    try {
-      // Direct DB call via a simple approach
-      const res = await fetch('/api/auth/me');
-      // We'll use a simple approach - this would normally be an API
-      // For demo, just toggle locally
-      setUsers(users.map(u =>
-        u.id === userId ? { ...u, role: u.role === 'admin' ? 'player' : 'admin' } : u
-      ));
-    } catch {
-      // ignore
+  // Auto-calculate deadline (Wednesday 12h before game date)
+  const handleGameDateChange = (dateStr: string) => {
+    setNewGameDate(dateStr);
+    if (!dateStr) {
+      setNewGameDeadline('');
+      return;
     }
+    const gameDate = new Date(dateStr);
+    // Find Wednesday before the game (game is usually Saturday)
+    const dayOfWeek = gameDate.getDay();
+    let daysBefore = dayOfWeek - 3; // Wednesday
+    if (daysBefore <= 0) daysBefore += 7;
+    const deadline = new Date(gameDate);
+    deadline.setDate(deadline.getDate() - daysBefore);
+    deadline.setHours(12, 0, 0, 0);
+    const dStr = new Date(deadline.getTime() - deadline.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setNewGameDeadline(dStr);
   };
 
   const handleCreateGame = async () => {
     if (!newGameDate) return;
     setCreatingGame(true);
+    setGameMsg('');
     try {
       const res = await fetch('/api/admin/games', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: newGameDate, location: newGameLocation }),
+        body: JSON.stringify({
+          date: newGameDate,
+          location: newGameLocation,
+          confirmationDeadline: newGameDeadline || null,
+        }),
       });
       if (res.ok) {
+        setGameMsg('✅ Jogo criado com sucesso!');
         setNewGameDate('');
-        await fetchData();
+        setNewGameDeadline('');
+      } else {
+        const data = await res.json();
+        setGameMsg(data.error || 'Erro ao criar jogo');
       }
     } catch {
-      // ignore
+      setGameMsg('Erro de ligação');
     } finally {
       setCreatingGame(false);
     }
   };
 
-  const handleSuggestionStatus = async (id: string, status: string) => {
+  const handleApproveSuggestion = async (id: string) => {
     try {
-      await fetch(`/api/admin/suggestions/${id}`, {
+      await fetch(`/api/finance/suggestions/${id}/approve`, { method: 'POST' });
+      await fetchData();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleRejectSuggestion = async (id: string) => {
+    try {
+      await fetch(`/api/finance/suggestions/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: 'rejeitada' }),
       });
       await fetchData();
     } catch {
@@ -120,10 +183,62 @@ export default function AdminPage() {
     }
   };
 
+  const handleReviewReceipt = async (id: string, status: string, note?: string) => {
+    try {
+      await fetch(`/api/payments/receipts/${id}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, note: note || null }),
+      });
+      setRejectingId(null);
+      setRejectNote('');
+      await fetchData();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSendNotification = async () => {
+    if (!notifTitle.trim() || !notifMessage.trim()) return;
+    setSendingNotif(true);
+    setNotifMsg('');
+
+    try {
+      let targets: string[] = [];
+      if (notifUserId === 'all') {
+        targets = users.map(u => u.id);
+      } else {
+        targets = [notifUserId];
+      }
+
+      await Promise.all(targets.map(userId =>
+        fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            type: 'general',
+            title: notifTitle.trim(),
+            message: notifMessage.trim(),
+          }),
+        })
+      ));
+
+      setNotifMsg(`✅ Notificação enviada a ${targets.length} utilizador(es)`);
+      setNotifTitle('');
+      setNotifMessage('');
+      setNotifUserId('all');
+    } catch {
+      setNotifMsg('Erro ao enviar notificações');
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="p-4 text-center">
-        <p className="text-red-400">Acesso negado</p>
+        <p className="text-rose-400">Acesso negado</p>
       </div>
     );
   }
@@ -132,150 +247,385 @@ export default function AdminPage() {
     return (
       <div className="p-4 space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-zinc-900 rounded-xl animate-pulse" />
+          <div key={i} className="h-24 glass-card rounded-2xl animate-pulse" />
         ))}
       </div>
     );
   }
 
+  const pendingReceipts = receipts.filter(r => r.status === 'pending');
+  const reviewedReceipts = receipts.filter(r => r.status !== 'pending');
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all duration-200">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-white">Admin Painel</h1>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Admin Painel</h1>
+            <p className="text-zinc-500 text-xs">Futebol Bonfim</p>
+          </div>
+        </div>
       </div>
 
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="bg-zinc-900 w-full">
-          <TabsTrigger value="users" className="flex-1 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800">
-            Utilizadores
-          </TabsTrigger>
-          <TabsTrigger value="games" className="flex-1 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800">
+      <Tabs defaultValue="jogos" className="w-full">
+        <TabsList className="bg-zinc-900/80 backdrop-blur-sm w-full h-auto p-1 gap-1 rounded-xl border border-zinc-800/50">
+          <TabsTrigger value="jogos" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+            <Calendar className="w-3.5 h-3.5 mr-1" />
             Jogos
           </TabsTrigger>
-          <TabsTrigger value="suggestions" className="flex-1 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800">
+          <TabsTrigger value="pagamentos" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+            <CreditCard className="w-3.5 h-3.5 mr-1" />
+            Pagamentos
+          </TabsTrigger>
+          <TabsTrigger value="sugestoes" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+            <MessageSquare className="w-3.5 h-3.5 mr-1" />
             Sugestões
+          </TabsTrigger>
+          <TabsTrigger value="utilizadores" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+            <Users className="w-3.5 h-3.5 mr-1" />
+            Utilizadores
+          </TabsTrigger>
+          <TabsTrigger value="notificacoes" className="flex-1 text-[11px] py-2 text-zinc-400 data-[state=active]:text-white data-[state=active]:bg-zinc-800/80 data-[state=active]:shadow-sm rounded-lg transition-all duration-200">
+            <Bell className="w-3.5 h-3.5 mr-1" />
+            Notif.
           </TabsTrigger>
         </TabsList>
 
-        {/* Users Tab */}
-        <TabsContent value="users" className="mt-4 space-y-2">
-          {users.map((u) => (
-            <Card key={u.id} className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3 flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-white text-sm font-medium truncate">{u.name}</p>
-                    {u.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+        {/* ===== JOGOS TAB ===== */}
+        <TabsContent value="jogos" className="mt-4 space-y-4">
+          <div className="glass-card rounded-2xl shadow-lg shadow-black/10 p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-emerald-400" />
+              Criar Novo Jogo
+            </h3>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <Label className="text-zinc-300 text-sm">Data e Hora</Label>
+                <Input
+                  type="datetime-local"
+                  value={newGameDate}
+                  onChange={(e) => handleGameDateChange(e.target.value)}
+                  className="bg-zinc-800/80 border-zinc-700/50 text-white transition-all duration-200 focus:border-emerald-500/50"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-zinc-300 text-sm">Local</Label>
+                <Input
+                  value={newGameLocation}
+                  onChange={(e) => setNewGameLocation(e.target.value)}
+                  className="bg-zinc-800/80 border-zinc-700/50 text-white transition-all duration-200 focus:border-emerald-500/50"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-zinc-300 text-sm">Prazo de Confirmação (Mensalistas)</Label>
+                <Input
+                  type="datetime-local"
+                  value={newGameDeadline}
+                  onChange={(e) => setNewGameDeadline(e.target.value)}
+                  className="bg-zinc-800/80 border-zinc-700/50 text-white transition-all duration-200 focus:border-emerald-500/50"
+                />
+              </div>
+              {gameMsg && (
+                <p className={`text-sm text-center py-2 rounded-lg ${gameMsg.startsWith('✅') ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'}`}>
+                  {gameMsg}
+                </p>
+              )}
+              <Button
+                onClick={handleCreateGame}
+                disabled={creatingGame || !newGameDate}
+                className="w-full btn-gradient-animated text-white transition-all duration-200 shadow-lg shadow-emerald-500/20 font-semibold"
+              >
+                {creatingGame ? 'A criar...' : 'Criar Jogo'}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ===== PAGAMENTOS TAB ===== */}
+        <TabsContent value="pagamentos" className="mt-4 space-y-4">
+          {pendingReceipts.length > 0 && (
+            <>
+              <h3 className="text-sm font-semibold text-amber-400 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Pendentes ({pendingReceipts.length})
+              </h3>
+              <div className="space-y-3">
+                {pendingReceipts.map((r) => (
+                  <div key={r.id} className="glass-card rounded-2xl shadow-lg shadow-black/10 p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs">
+                          {r.user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium">{r.user.name}</p>
+                        <p className="text-zinc-500 text-xs">{r.user.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white text-sm font-bold">{r.amount.toFixed(2)}€</p>
+                        <p className="text-zinc-500 text-xs">{MONTHS[r.month]} {r.year}</p>
+                      </div>
+                    </div>
+                    <div
+                      className="w-full h-40 rounded-xl overflow-hidden mb-3 cursor-pointer"
+                      onClick={() => window.open(r.imageData, '_blank')}
+                    >
+                      <img src={r.imageData} alt="Comprovativo" className="w-full h-full object-cover" />
+                    </div>
+                    {rejectingId === r.id ? (
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Motivo da rejeição..."
+                          value={rejectNote}
+                          onChange={(e) => setRejectNote(e.target.value)}
+                          className="bg-zinc-800/80 border-zinc-700/50 text-white text-sm transition-all duration-200 focus:border-rose-500/50"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleReviewReceipt(r.id, 'rejected', rejectNote)}
+                            className="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-xs"
+                          >
+                            <XCircle className="w-3.5 h-3.5 mr-1" />
+                            Confirmar Rejeição
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setRejectingId(null); setRejectNote(''); }}
+                            className="text-zinc-400 text-xs"
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleReviewReceipt(r.id, 'approved')}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs transition-all duration-200"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => setRejectingId(r.id)}
+                          className="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-xs transition-all duration-200"
+                        >
+                          <XCircle className="w-3.5 h-3.5 mr-1" />
+                          Rejeitar
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-zinc-500 text-xs truncate">{u.email}</p>
+                ))}
+              </div>
+            </>
+          )}
+
+          {reviewedReceipts.length > 0 && (
+            <>
+              <h3 className="text-sm font-semibold text-zinc-400 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Recentes
+              </h3>
+              <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-premium">
+                {reviewedReceipts.slice(0, 10).map((r) => (
+                  <div key={r.id} className="glass-card rounded-xl p-3 transition-all duration-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Avatar className="w-7 h-7">
+                          <AvatarFallback className="bg-zinc-800 text-zinc-400 text-[10px]">
+                            {r.user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-white text-xs font-medium truncate">{r.user.name}</p>
+                          <p className="text-zinc-500 text-[10px]">{MONTHS[r.month]} {r.year} • {r.amount.toFixed(2)}€</p>
+                        </div>
+                      </div>
+                      {r.status === 'approved' ? (
+                        <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Aprovado</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-rose-500/10 text-rose-400 border-rose-500/20">Rejeitado</Badge>
+                      )}
+                    </div>
+                    {r.reviewNote && (
+                      <p className="text-zinc-500 text-[10px] mt-1.5 ml-9 truncate">{r.reviewNote}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {receipts.length === 0 && (
+            <p className="text-zinc-600 text-center text-sm py-8">Sem comprovativos pendentes</p>
+          )}
+        </TabsContent>
+
+        {/* ===== SUGESTÕES TAB ===== */}
+        <TabsContent value="sugestoes" className="mt-4 space-y-3">
+          {suggestions.map((s) => {
+            const approvals: string[] = JSON.parse(s.approvalsJson || '[]');
+            const totalAdmins = 4;
+            return (
+              <div key={s.id} className="glass-card rounded-xl p-4 transition-all duration-200">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 pr-2">
+                    <p className="text-white text-sm font-medium">{s.title}</p>
+                    <p className="text-zinc-500 text-xs">{s.createdBy.name}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${
+                      s.votingOpen
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : s.status === 'rejeitada'
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                          : s.status === 'aprovada'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    }`}>
+                      {s.votingOpen ? 'Votação aberta' : `Aprovações: ${approvals.length}/${totalAdmins}`}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="w-full bg-zinc-800/80 rounded-full h-1.5 mb-3 overflow-hidden">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-500 ${s.votingOpen ? 'bg-gradient-to-r from-emerald-400 to-teal-400' : 'bg-gradient-to-r from-amber-400 to-orange-400'}`}
+                    style={{ width: `${(approvals.length / totalAdmins) * 100}%` }}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs bg-zinc-800 text-zinc-400 border-zinc-700">
-                    {u.position}
-                  </Badge>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleToggleAdmin(u.id)}
-                    className={`text-xs ${u.role === 'admin' ? 'text-amber-400' : 'text-zinc-500'}`}
+                    onClick={() => handleApproveSuggestion(s.id)}
+                    disabled={approvals.includes(user.id)}
+                    className={`text-xs transition-all duration-200 ${
+                      approvals.includes(user.id)
+                        ? 'text-emerald-400/50 cursor-not-allowed'
+                        : 'text-emerald-400 hover:bg-emerald-500/10'
+                    }`}
                   >
-                    {u.role === 'admin' ? 'Admin' : 'Player'}
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                    {approvals.includes(user.id) ? 'Aprovado' : 'Aprovar'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRejectSuggestion(s.id)}
+                    className="text-xs text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
+                  >
+                    <XCircle className="w-3.5 h-3.5 mr-1" />
+                    Rejeitar
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-
-        {/* Games Tab */}
-        <TabsContent value="games" className="mt-4 space-y-4">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-zinc-400">Criar Novo Jogo</h3>
-              <div className="space-y-2">
-                <div className="space-y-1">
-                  <Label className="text-zinc-300 text-sm">Data e Hora</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newGameDate}
-                    onChange={(e) => setNewGameDate(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-zinc-300 text-sm">Local</Label>
-                  <Input
-                    value={newGameLocation}
-                    onChange={(e) => setNewGameLocation(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-                <Button
-                  onClick={handleCreateGame}
-                  disabled={creatingGame || !newGameDate}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
-                >
-                  {creatingGame ? 'A criar...' : 'Criar Jogo'}
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {games.length === 0 && (
-            <p className="text-zinc-500 text-center text-sm">A criação de jogos avançada requer endpoints adicionais</p>
-          )}
-        </TabsContent>
-
-        {/* Suggestions Tab */}
-        <TabsContent value="suggestions" className="mt-4 space-y-2">
-          {suggestions.map((s) => {
-            const votes: string[] = JSON.parse(s.votesJson || '[]');
-            return (
-              <Card key={s.id} className="bg-zinc-900 border-zinc-800">
-                <CardContent className="p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">{s.title}</p>
-                      <p className="text-zinc-500 text-xs">{s.createdBy.name} • {votes.length} votos</p>
-                    </div>
-                    <Badge variant="outline" className={`text-xs shrink-0 ml-2 ${
-                      s.status === 'aprovada' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                      s.status === 'rejeitada' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                      'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                    }`}>
-                      {s.status === 'em-analise' ? 'Em Análise' : s.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSuggestionStatus(s.id, 'aprovada')}
-                      className="text-emerald-400 text-xs"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                      Aprovar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSuggestionStatus(s.id, 'rejeitada')}
-                      className="text-red-400 text-xs"
-                    >
-                      <XCircle className="w-3.5 h-3.5 mr-1" />
-                      Rejeitar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             );
           })}
           {suggestions.length === 0 && (
-            <p className="text-zinc-500 text-center text-sm py-6">Sem sugestões</p>
+            <p className="text-zinc-600 text-center text-sm py-8">Sem sugestões</p>
           )}
+        </TabsContent>
+
+        {/* ===== UTILIZADORES TAB ===== */}
+        <TabsContent value="utilizadores" className="mt-4 space-y-2">
+          {users.map((u) => (
+            <div key={u.id} className="glass-card rounded-xl p-3 transition-all duration-200 hover:bg-zinc-800/60">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar className="w-9 h-9">
+                    <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs">
+                      {u.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-white text-sm font-medium truncate">{u.name}</p>
+                      {u.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                    </div>
+                    <p className="text-zinc-500 text-xs truncate">{u.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${
+                    u.playerType === 'mensalista'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                  }`}>
+                    {u.playerType}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-zinc-800/80 text-zinc-400 border-zinc-700/50">
+                    {u.position}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          ))}
+        </TabsContent>
+
+        {/* ===== NOTIFICAÇÕES TAB ===== */}
+        <TabsContent value="notificacoes" className="mt-4 space-y-4">
+          <div className="glass-card rounded-2xl shadow-lg shadow-black/10 p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Bell className="w-4 h-4 text-emerald-400" />
+              Enviar Notificação
+            </h3>
+            <div className="space-y-1">
+              <Label className="text-zinc-300 text-sm">Destinatário</Label>
+              <select
+                value={notifUserId}
+                onChange={(e) => setNotifUserId(e.target.value)}
+                className="w-full bg-zinc-800/80 border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm transition-all duration-200 focus:border-emerald-500/50 focus:outline-none"
+              >
+                <option value="all">Todos os utilizadores</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-zinc-300 text-sm">Título</Label>
+              <Input
+                value={notifTitle}
+                onChange={(e) => setNotifTitle(e.target.value)}
+                placeholder="Título da notificação"
+                className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-zinc-300 text-sm">Mensagem</Label>
+              <Textarea
+                value={notifMessage}
+                onChange={(e) => setNotifMessage(e.target.value)}
+                placeholder="Escreve a mensagem..."
+                className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 min-h-[80px] transition-all duration-200 focus:border-emerald-500/50"
+              />
+            </div>
+            {notifMsg && (
+              <p className={`text-sm text-center py-2 rounded-lg ${notifMsg.startsWith('✅') ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'}`}>
+                {notifMsg}
+              </p>
+            )}
+            <Button
+              onClick={handleSendNotification}
+              disabled={sendingNotif || !notifTitle.trim() || !notifMessage.trim()}
+              className="w-full btn-gradient-animated text-white transition-all duration-200 shadow-lg shadow-emerald-500/20 font-semibold"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {sendingNotif ? 'A enviar...' : 'Enviar Notificação'}
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

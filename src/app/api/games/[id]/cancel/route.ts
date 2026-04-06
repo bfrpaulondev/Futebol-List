@@ -17,9 +17,14 @@ export async function POST(
 
     const { id } = await params;
 
-    await db.gameAttendee.deleteMany({
+    // Delete the attendee
+    const deleted = await db.gameAttendee.deleteMany({
       where: { gameId: id, userId: payload.userId },
     });
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: 'Não estás inscrito neste jogo' }, { status: 404 });
+    }
 
     // Clear teams if drawn
     await db.game.update({
@@ -27,7 +32,34 @@ export async function POST(
       data: { teamsJson: '{}', aiCoachComment: null },
     });
 
-    return NextResponse.json({ success: true });
+    // Auto-promote first person from waiting list to confirmed
+    const waitingAttendees = await db.gameAttendee.findMany({
+      where: { gameId: id, status: 'waiting' },
+      orderBy: { confirmedAt: 'asc' },
+      include: {
+        user: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    let promoted = null;
+    if (waitingAttendees.length > 0) {
+      const firstWaiting = waitingAttendees[0];
+      await db.gameAttendee.update({
+        where: { id: firstWaiting.id },
+        data: { status: 'confirmed' },
+      });
+      promoted = {
+        id: firstWaiting.user.id,
+        name: firstWaiting.user.name,
+      };
+    }
+
+    return NextResponse.json({
+      success: true,
+      promoted,
+    });
   } catch (error) {
     console.error('Cancel error:', error);
     return NextResponse.json({ error: 'Erro ao cancelar presença' }, { status: 500 });

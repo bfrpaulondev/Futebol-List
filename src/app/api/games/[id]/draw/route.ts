@@ -23,14 +23,20 @@ export async function POST(
     const { id } = await params;
     const game = await db.game.findUnique({
       where: { id },
-      include: { attendees: { include: { user: true } } },
+      include: {
+        attendees: {
+          where: { status: 'confirmed' },
+          include: { user: true },
+          orderBy: { confirmedAt: 'asc' },
+        },
+      },
     });
 
     if (!game || game.attendees.length < 2) {
-      return NextResponse.json({ error: 'Jogo precisa de pelo menos 2 jogadores' }, { status: 400 });
+      return NextResponse.json({ error: 'Jogo precisa de pelo menos 2 jogadores confirmados' }, { status: 400 });
     }
 
-    // Shuffle attendees
+    // Shuffle only confirmed attendees
     const shuffled = [...game.attendees].sort(() => Math.random() - 0.5);
     const mid = Math.ceil(shuffled.length / 2);
 

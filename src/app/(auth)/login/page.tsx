@@ -36,7 +36,6 @@ export default function LoginPage() {
       }
 
       setUser(data.user);
-      // Use hard redirect to ensure cookie is read by middleware
       window.location.href = '/';
     } catch {
       setError('Erro de ligação');
@@ -45,69 +44,73 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+    <div className="min-h-screen auth-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Logo Area */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚽</div>
-          <h1 className="text-3xl font-bold text-white">Futebol List</h1>
-          <p className="text-zinc-400 mt-1">Gestão do Clube de Futsal</p>
+          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <span className="text-3xl">⚽</span>
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Futebol Bonfim</h1>
+          <p className="text-zinc-500 mt-1 text-sm">Gestão do Clube de Futsal</p>
         </div>
 
-        <Card className="bg-zinc-900 border-zinc-800">
+        {/* Login Card */}
+        <Card className="glass-card shadow-xl shadow-black/20">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl text-center text-white">Entrar</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-zinc-300">Email</Label>
+                <Label htmlFor="email" className="text-zinc-300 text-sm">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="o.teu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                  className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-zinc-300">Senha</Label>
+                <Label htmlFor="password" className="text-zinc-300 text-sm">Senha</Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                  className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
                   required
                 />
               </div>
 
               {error && (
-                <p className="text-red-400 text-sm text-center">{error}</p>
+                <p className="text-rose-400 text-sm text-center bg-rose-500/10 py-2 px-3 rounded-lg">{error}</p>
               )}
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold py-5"
+                className="w-full btn-gradient-animated hover:opacity-90 text-white font-semibold py-5 transition-all duration-200 shadow-lg shadow-emerald-500/20"
               >
                 {loading ? 'A entrar...' : 'Entrar'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-zinc-400 text-sm">
+              <p className="text-zinc-500 text-sm">
                 Não tens conta?{' '}
-                <Link href="/register" className="text-teal-400 hover:text-teal-300 font-medium">
+                <Link href="/register" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200">
                   Criar Conta
                 </Link>
               </p>
             </div>
 
-            <div className="mt-4 p-3 bg-zinc-800/50 rounded-lg">
+            <div className="mt-4 p-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30">
               <p className="text-zinc-500 text-xs text-center">
                 Demo: bruno@test.com / joao@test.com / pedro@test.com / ricardo@test.com
               </p>

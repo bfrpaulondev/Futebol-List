@@ -16,6 +16,12 @@ interface TeamPlayer {
   avatar: string | null;
 }
 
+interface Attendee {
+  id: string;
+  userId: string;
+  status: string;
+}
+
 interface GameData {
   id: string;
   date: string;
@@ -23,6 +29,8 @@ interface GameData {
   teamsJson: string;
   aiCoachComment: string | null;
   status: string;
+  confirmed: Attendee[];
+  waiting: Attendee[];
 }
 
 export default function TeamsPage() {
@@ -73,7 +81,7 @@ export default function TeamsPage() {
     return (
       <div className="p-4 space-y-4">
         <div className="h-8 bg-zinc-900 rounded animate-pulse w-32" />
-        <div className="h-64 bg-zinc-900 rounded-xl animate-pulse" />
+        <div className="h-80 glass-card rounded-2xl animate-pulse" />
       </div>
     );
   }
@@ -81,12 +89,15 @@ export default function TeamsPage() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Equipas</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Equipas</h1>
+          <p className="text-zinc-500 text-sm mt-0.5">Sorteio das equipas</p>
+        </div>
         {user?.role === 'admin' && !teams && game && (
           <Button
             onClick={handleDraw}
-            disabled={drawing || (game ? game.attendees?.length < 2 : true)}
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+            disabled={drawing || (game ? (game.confirmed?.length || 0) < 2 : true)}
+            className="btn-gradient-animated text-white transition-all duration-200 shadow-lg shadow-emerald-500/20"
           >
             {drawing ? 'A sortear...' : '🎲 Sortear'}
           </Button>
@@ -94,29 +105,27 @@ export default function TeamsPage() {
       </div>
 
       {!teams ? (
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-8 text-center">
-            <div className="text-5xl mb-4">👥</div>
-            <p className="text-zinc-400 text-lg">Aguardando sorteio</p>
-            <p className="text-zinc-500 text-sm mt-2">
-              O admin precisa fazer o sorteio das equipas após confirmações
-            </p>
-          </CardContent>
-        </Card>
+        <div className="glass-card rounded-2xl shadow-lg shadow-black/20 p-8 text-center">
+          <div className="text-5xl mb-4">👥</div>
+          <p className="text-zinc-300 text-lg font-medium">Aguardando sorteio</p>
+          <p className="text-zinc-500 text-sm mt-2">
+            O admin precisa fazer o sorteio das equipas após confirmações
+          </p>
+        </div>
       ) : (
         <>
           {/* Field Visualization */}
-          <div className="relative bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
-            <div className="flex min-h-[400px]">
+          <div className="relative glass-card rounded-2xl shadow-lg shadow-black/20 overflow-hidden">
+            <div className="flex min-h-[420px]">
               {/* Team A - Green */}
-              <div className="flex-1 bg-gradient-to-b from-emerald-900/40 to-emerald-950/40 p-4 flex flex-col justify-between relative border-r border-zinc-700/50">
+              <div className="flex-1 bg-gradient-to-b from-emerald-900/30 to-emerald-950/30 p-4 flex flex-col justify-between relative border-r border-zinc-700/30">
                 <div className="text-center mb-2">
-                  <Badge className="bg-emerald-600 text-white">EQUIPA VERDE</Badge>
+                  <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 shadow-sm">EQUIPA VERDE</Badge>
                 </div>
-                <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                  {teams.teamA.map((player, i) => (
-                    <div key={player.userId} className="flex flex-col items-center gap-1">
-                      <div className="w-14 h-14 rounded-full bg-emerald-600/30 border-2 border-emerald-500 flex flex-col items-center justify-center">
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                  {teams.teamA.map((player) => (
+                    <div key={player.userId} className="flex flex-col items-center gap-1.5">
+                      <div className="w-14 h-14 rounded-full bg-emerald-500/15 border-2 border-emerald-500/60 flex flex-col items-center justify-center backdrop-blur-sm shadow-lg shadow-emerald-500/10">
                         <span className="text-xs font-bold text-emerald-400">{player.overallRating}</span>
                         <span className="text-[10px] text-emerald-300/70">{player.position}</span>
                       </div>
@@ -129,14 +138,14 @@ export default function TeamsPage() {
               </div>
 
               {/* Team B - Teal */}
-              <div className="flex-1 bg-gradient-to-b from-teal-900/40 to-teal-950/40 p-4 flex flex-col justify-between relative">
+              <div className="flex-1 bg-gradient-to-b from-teal-900/30 to-teal-950/30 p-4 flex flex-col justify-between relative">
                 <div className="text-center mb-2">
-                  <Badge className="bg-teal-600 text-white">EQUIPA AZUL</Badge>
+                  <Badge className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0 shadow-sm">EQUIPA AZUL</Badge>
                 </div>
-                <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                  {teams.teamB.map((player, i) => (
-                    <div key={player.userId} className="flex flex-col items-center gap-1">
-                      <div className="w-14 h-14 rounded-full bg-teal-600/30 border-2 border-teal-500 flex flex-col items-center justify-center">
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                  {teams.teamB.map((player) => (
+                    <div key={player.userId} className="flex flex-col items-center gap-1.5">
+                      <div className="w-14 h-14 rounded-full bg-teal-500/15 border-2 border-teal-500/60 flex flex-col items-center justify-center backdrop-blur-sm shadow-lg shadow-teal-500/10">
                         <span className="text-xs font-bold text-teal-400">{player.overallRating}</span>
                         <span className="text-[10px] text-teal-300/70">{player.position}</span>
                       </div>
@@ -150,23 +159,27 @@ export default function TeamsPage() {
             </div>
 
             {/* Center line */}
-            <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-zinc-600/50" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-zinc-600/50" />
+            <div className="absolute top-0 bottom-0 left-1/2 w-px bg-zinc-600/30" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-zinc-600/30" />
           </div>
 
           {/* AI Coach Comment */}
           {game?.aiCoachComment && (
-            <Card className="bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-800/30">
+            <div className="glass-card rounded-2xl shadow-lg shadow-black/20 overflow-hidden">
+              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl">🧠</span>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center shrink-0">
+                    <span className="text-sm">🧠</span>
+                  </div>
                   <div>
                     <p className="text-emerald-400 font-semibold text-sm mb-1">Treinador IA</p>
                     <p className="text-zinc-300 text-sm leading-relaxed">{game.aiCoachComment}</p>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+              <div className="h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
+            </div>
           )}
         </>
       )}
