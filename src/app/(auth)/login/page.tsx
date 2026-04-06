@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { setUser } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +36,8 @@ export default function LoginPage() {
       }
 
       setUser(data.user);
-      router.push('/');
+      // Use hard redirect to ensure cookie is read by middleware
+      window.location.href = '/';
     } catch {
       setError('Erro de ligação');
       setLoading(false);

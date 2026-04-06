@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +17,6 @@ export default function RegisterPage() {
   const [position, setPosition] = useState('ALA');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { setUser } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +40,7 @@ export default function RegisterPage() {
       }
 
       setUser(data.user);
-      router.push('/');
+      window.location.href = '/';
     } catch {
       setError('Erro de ligação');
       setLoading(false);
