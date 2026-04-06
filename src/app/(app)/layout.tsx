@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { Bell, X } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from 'sonner';
+import PwaInstallModal from '@/components/pwa-install-modal';
 
 interface Notification {
   id: string;
@@ -26,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Build tabs dynamically based on user role
   const getTabs = () => {
-    const isMensalista = user?.playerType === 'mensalista' || user?.role === 'admin';
+    const isMensalista = user?.playerType === 'mensalista' || user?.role === 'admin' || user?.role === 'master';
     const baseTabs = [
       { href: '/', label: 'Jogo', icon: '⚽' },
       { href: '/teams', label: 'Equipas', icon: '👥' },
@@ -41,12 +43,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const tabs = getTabs();
 
+  const prevUnreadRef = useRef(0);
+
   const fetchNotifCount = useCallback(async () => {
     try {
       const res = await fetch('/api/notifications?count=true');
       if (res.ok) {
         const data = await res.json();
-        setUnreadCount(data.count || 0);
+        const newCount = data.count || 0;
+        // Toast on new notifications
+        if (prevUnreadRef.current > 0 && newCount > prevUnreadRef.current) {
+          toast.info(`Tens ${newCount - prevUnreadRef.current} nova(s) notificação(ões)`);
+        }
+        prevUnreadRef.current = newCount;
+        setUnreadCount(newCount);
       }
     } catch {
       // ignore
@@ -75,8 +85,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Redirect convidados away from restricted pages
   useEffect(() => {
     if (!user || isLoading) return;
-    const isMensalista = user.playerType === 'mensalista' || user.role === 'admin';
-    const isAdmin = user.role === 'admin';
+    const isMensalista = user.playerType === 'mensalista' || user.role === 'admin' || user.role === 'master';
+    const isAdmin = user.role === 'admin' || user.role === 'master';
 
     if (pathname.startsWith('/finances') && !isMensalista) {
       router.replace('/');
@@ -118,6 +128,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-zinc-950">
+      {/* PWA Install Modal */}
+      <PwaInstallModal />
       {/* Top gradient accent line */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 z-[60]" />
 

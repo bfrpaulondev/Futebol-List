@@ -35,7 +35,7 @@ export async function POST(
     }
 
     const user = await db.user.findUnique({ where: { id: payload.userId } });
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'master')) {
       return NextResponse.json({ error: 'Apenas admin pode sortear' }, { status: 403 });
     }
 
@@ -163,11 +163,11 @@ export async function POST(
         {
           role: 'system',
           content:
-            'És um treinador de futsal português apaixonado. Dá uma opinião curta e motivadora sobre as equipas formadas (3-4 frases). Menciona nomes de jogadores e posições. Sê entusiasmado mas realista. Responde em português de Portugal.',
+            'És um treinador de society português apaixonado. Dá uma opinião curta e motivadora sobre as equipas formadas (3-4 frases). Menciona nomes de jogadores e posições. Sê entusiasmado mas realista. Responde em português de Portugal.',
         },
         {
           role: 'user',
-          content: `Sorteio de equipas para futsal 6v6:\nEquipa Verde: ${teamANames}\nEquipa Azul: ${teamBNames}\n${reserveNames}\nDá uma opinião sobre o equilíbrio das equipas e destaca aspetos táticos.`,
+          content: `Sorteio de equipas para Society Futebol Nº5:\nEquipa Verde: ${teamANames}\nEquipa Azul: ${teamBNames}\n${reserveNames}\nDá uma opinião sobre o equilíbrio das equipas e destaca aspetos táticos.`,
         },
       ], 0.9);
     } catch {

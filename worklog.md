@@ -49,3 +49,55 @@ Build complete Futebol List futsal club management app - all API routes, pages, 
 - Root page.tsx redirects to /login
 - All lint passes cleanly (added futebol-list-analysis to ignore list)
 - Seed data verified: 4 users, 1 game, 3 attendees, 3 messages, 3 transactions, 2 suggestions, 1 colete schedule, 3 ratings
+
+---
+## Task ID: 3 - fullstack-dev
+### Work Task
+Implement comprehensive feature updates: Sonner toasts, Palestrinha notifications, admin roles, chat edit/delete, PWA support, Society branding.
+
+### Work Summary
+All 9 change groups implemented successfully:
+
+1. **Sonner Toast** (`src/app/layout.tsx`): Replaced shadcn/ui Toaster with Sonner `<Toaster richColors position="top-center" theme="dark" />`
+
+2. **Palestrinha Auto-Notifications**:
+   - Created `src/lib/palestrinha-notify.ts` - shared helper using OpenAI gpt-4o-mini to generate funny Portuguese notification messages as Palestrinha character, then batch-create notifications for all active users
+   - Created `src/app/api/notifications/palestrinha/route.ts` - POST endpoint requiring admin/master role
+   - Updated `src/app/api/games/[id]/confirm/route.ts` to fire Palestrinha notification on confirmation
+
+3. **Admin Roles Updated** (`src/lib/seed-check.ts`, `prisma/seed.ts`):
+   - Carlos(0)=player, Mirko(1)=player, Rodrigo(2)=admin, Edson(3)=admin, Bruno(6)=master, David(10)=admin
+
+4. **Master Role Support** (13 files updated):
+   - `src/middleware.ts` - isAdmin includes master
+   - `src/app/api/notifications/route.ts` - POST allows admin+master
+   - `src/app/api/notifications/palestrinha/route.ts` - admin+master
+   - `src/app/api/games/[id]/draw/route.ts` - admin+master
+   - `src/app/api/admin/games/route.ts` - admin+master
+   - `src/app/api/payments/receipts/route.ts` - admin+master
+   - `src/app/api/payments/receipts/[id]/review/route.ts` - admin+master
+   - `src/app/api/finance/transactions/route.ts` - admin+master
+   - `src/app/api/finance/suggestions/[id]/approve/route.ts` - admin+master
+   - `src/app/(app)/layout.tsx` - tab access, route protection
+   - `src/app/(app)/teams/page.tsx` - draw button visibility
+   - `src/app/(app)/admin/page.tsx` - page access, crown badge
+   - `src/app/(app)/profile/page.tsx` - admin link visibility
+   - `src/app/(app)/finances/page.tsx` - page access
+
+5. **Chat Delete/Edit**:
+   - `src/app/api/chat/messages/route.ts` - Added PUT (edit own/master can edit any) and DELETE (soft delete, own/master) handlers
+   - `src/app/(app)/chat/page.tsx` - Added 3-dot menu on hover for own messages (edit/delete), master sees delete on ALL messages, inline edit input, toast notifications via sonner
+
+6. **PWA Support**:
+   - Created `public/manifest.json` with app metadata
+   - Updated `src/app/layout.tsx` metadata with manifest, themeColor, viewport, appleWebApp
+
+7. **PWA Install Modal** (`src/components/pwa-install-modal.tsx`): Beautiful modal with glass-card styling, listens for beforeinstallprompt, localStorage dismiss tracking
+
+8. **Society Futebol Nº5 Rebranding**: Replaced all "futsal" references in src/ with "society" or "Society Futebol Nº5" (login page, suggestions placeholder, draw API prompt, chat header, teams rules)
+
+9. **Toast Notifications**:
+   - `src/app/(app)/layout.tsx` - Toast on new notifications when polling detects count increase
+   - `src/app/(app)/chat/page.tsx` - Toast on new messages from other users
+
+All lint checks pass cleanly.

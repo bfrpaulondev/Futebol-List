@@ -71,3 +71,116 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Erro ao enviar mensagem' }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  await ensureSeeded();
+
+  try {
+    const payload = await getUserFromCookie();
+    if (!payload) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { id, content } = await request.json();
+
+    if (!id || !content || !content.trim()) {
+      return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 });
+    }
+
+    const trimmed = content.trim();
+
+    if (trimmed.length > 1000) {
+      return NextResponse.json({ error: 'Mensagem demasiado longa (máx. 1000 caracteres)' }, { status: 400 });
+    }
+
+    // Check if message exists
+    const message = await db.message.findUnique({
+      where: { id },
+    });
+
+    if (!message) {
+      return NextResponse.json({ error: 'Mensagem não encontrada' }, { status: 404 });
+    }
+
+    if (message.isDeleted) {
+      return NextResponse.json({ error: 'Mensagem eliminada' }, { status: 400 });
+    }
+
+    // Check permissions: own message or master
+    const user = await db.user.findUnique({ where: { id: payload.userId } });
+    const isMaster = user?.role === 'master';
+
+    if (message.authorId !== payload.userId && !isMaster) {
+      return NextResponse.json({ error: 'Não podes editar esta mensagem' }, { status: 403 });
+    }
+
+    const updated = await db.message.update({
+      where: { id },
+      data: { content: trimmed, updatedAt: new Date() },
+      include: {
+        author: {
+          select: { id: true, name: true, avatar: true },
+        },
+      },
+    });
+
+    return NextResponse.json({ message: updated });
+  } catch (error) {
+    console.error('Update message error:', error);
+    return NextResponse.json({ error: 'Erro ao editar mensagem' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  await ensureSeeded();
+
+  try {
+    const payload = await getUserFromCookie();
+    if (!payload) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID da mensagem obrigatório' }, { status: 400 });
+    }
+
+    // Check if message exists
+    const message = await db.message.findUnique({
+      where: { id },
+    });
+
+    if (!message) {
+      return NextResponse.json({ error: 'Mensagem não encontrada' }, { status: 404 });
+    }
+
+    if (message.isDeleted) {
+      return NextResponse.json({ error: 'Mensagem já eliminada' }, { status: 400 });
+    }
+
+    // Check permissions: own message or master
+    const user = await db.user.findUnique({ where: { id: payload.userId } });
+    const isMaster = user?.role === 'master';
+
+    if (message.authorId !== payload.userId && !isMaster) {
+      return NextResponse.json({ error: 'Não podes eliminar esta mensagem' }, { status: 403 });
+    }
+
+    // Soft delete
+    const updated = await db.message.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        content: 'Esta mensagem foi eliminada',
+        updatedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete message error:', error);
+    return NextResponse.json({ error: 'Erro ao eliminar mensagem' }, { status: 500 });
+  }
+}

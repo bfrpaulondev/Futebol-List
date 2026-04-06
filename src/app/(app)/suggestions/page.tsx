@@ -135,7 +135,7 @@ export default function SuggestionsPage() {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Novas bolas de futsal"
+              placeholder="Ex: Novas bolas de society"
               className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
               required
             />

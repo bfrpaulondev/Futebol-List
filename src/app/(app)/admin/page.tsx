@@ -235,7 +235,7 @@ export default function AdminPage() {
     }
   };
 
-  if (!user || user.role !== 'admin') {
+  if (!user || (user.role !== 'admin' && user.role !== 'master')) {
     return (
       <div className="p-4 text-center">
         <p className="text-rose-400">Acesso negado</p>
@@ -552,7 +552,7 @@ export default function AdminPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="text-white text-sm font-medium truncate">{u.name}</p>
-                      {u.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                      {(u.role === 'admin' || u.role === 'master') && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                     </div>
                     <p className="text-zinc-500 text-xs truncate">{u.email}</p>
                     {u.congregation && <p className="text-zinc-600 text-[10px] truncate">⛪ {u.congregation}</p>}

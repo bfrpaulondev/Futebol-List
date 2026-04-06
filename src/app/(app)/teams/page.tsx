@@ -591,7 +591,7 @@ export default function TeamsPage() {
   const canDraw = status?.canDraw || false;
   const timeUntil = status?.timeUntilDraw;
   const hasArrived = status?.arrived?.some((a) => a.userId === user?.id);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'master';
 
   return (
     <div className="p-4 space-y-4">
@@ -760,7 +760,7 @@ export default function TeamsPage() {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-emerald-500 mt-0.5">•</span>
-            5. Extras ficam como suplentes
+            5. 5 jogadores por equipa (1 goleiro + 4 na linha) e 1 suplente por equipa
           </li>
         </ul>
       </div>

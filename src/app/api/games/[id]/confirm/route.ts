@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getUserFromCookie } from '@/lib/auth';
 import { ensureSeeded } from '@/lib/seed-check';
+import { sendPalestrinhaNotification } from '@/lib/palestrinha-notify';
 
 export async function POST(
   request: Request,
@@ -85,6 +86,9 @@ export async function POST(
         status,
       },
     });
+
+    // Send Palestrinha notification (fire and forget)
+    sendPalestrinhaNotification('confirm', user.name, `${status === 'confirmed' ? 'Confirmou presença' : 'Entrou na lista de espera'}`);
 
     return NextResponse.json({ success: true, attendee });
   } catch (error: unknown) {

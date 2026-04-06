@@ -210,7 +210,7 @@ async function seedDatabase() {
         congregation: p.congregation,
         playerType: 'mensalista',
         position: p.position,
-        role: i < 3 ? 'admin' : 'player', // First 3 are admins
+        role: i === 2 || i === 3 ? 'admin' : i === 6 ? 'master' : i === 10 ? 'admin' : 'player', // Rodrigo(2), Edson(3), David(10)=admin; Bruno(6)=master
         skillsJson: JSON.stringify({ defense: 6, attack: 6, passing: 6, technique: 6, stamina: 6 }),
         overallRating: 5.0,
         gamesPlayed: 0,

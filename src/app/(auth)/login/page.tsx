@@ -51,7 +51,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Image src="/logo.png" alt="Futebol Bonfim" width={80} height={80} className="rounded-2xl mx-auto mb-4 shadow-lg shadow-emerald-500/20" />
           <h1 className="text-3xl font-bold text-white tracking-tight">Futebol Bonfim</h1>
-          <p className="text-zinc-500 mt-1 text-sm">Gestão do Clube de Futsal</p>
+          <p className="text-zinc-500 mt-1 text-sm">Gestão do Society Futebol Nº5</p>
         </div>
 
         {/* Login Card */}
@@ -111,7 +111,7 @@ export default function LoginPage() {
 
             <div className="mt-4 p-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30">
               <p className="text-zinc-500 text-xs text-center">
-                Demo: bruno@test.com / joao@test.com / pedro@test.com / ricardo@test.com
+                Demo: bruno@test.com (master) / rodrigo@test.com (admin)
               </p>
               <p className="text-zinc-600 text-xs text-center">Senha: 123456</p>
             </div>

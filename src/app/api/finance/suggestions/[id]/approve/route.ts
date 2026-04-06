@@ -16,7 +16,7 @@ export async function POST(
     }
 
     const user = await db.user.findUnique({ where: { id: payload.userId } });
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'master')) {
       return NextResponse.json({ error: 'Apenas admin pode aprovar sugestões' }, { status: 403 });
     }
 

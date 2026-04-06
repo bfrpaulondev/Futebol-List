@@ -19,7 +19,7 @@ export async function GET() {
     }
 
     // Only mensalistas and admins can view transactions
-    if (user.playerType !== 'mensalista' && user.role !== 'admin') {
+    if (user.playerType !== 'mensalista' && user.role !== 'admin' && user.role !== 'master') {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 

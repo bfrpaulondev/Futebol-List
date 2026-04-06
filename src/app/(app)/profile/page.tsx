@@ -289,7 +289,7 @@ export default function ProfilePage() {
             <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
           </div>
         </Link>
-        {user.role === 'admin' && (
+        {(user.role === 'admin' || user.role === 'master') && (
           <Link href="/admin">
             <div className="glass-card rounded-2xl p-4 flex items-center justify-between transition-all duration-200 hover:bg-zinc-800/60 group cursor-pointer">
               <div className="flex items-center gap-3">

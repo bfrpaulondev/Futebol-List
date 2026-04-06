@@ -33,7 +33,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const isAdmin = payload.role === 'admin';
+  const isAdmin = payload.role === 'admin' || payload.role === 'master';
   const isMensalista = payload.playerType === 'mensalista';
 
   // Protect admin routes - only admins

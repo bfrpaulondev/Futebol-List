@@ -65,7 +65,7 @@ export default function FinancesPage() {
 
   useEffect(() => {
     if (user) {
-      if (user.playerType !== 'mensalista' && user.role !== 'admin') {
+      if (user.playerType !== 'mensalista' && user.role !== 'admin' && user.role !== 'master') {
         setError('Acesso restrito a mensalistas');
         setLoading(false);
         return;

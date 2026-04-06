@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     }
 
     // Only admins can create games
-    if (payload.role !== 'admin') {
+    if (payload.role !== 'admin' && payload.role !== 'master') {
       return NextResponse.json({ error: 'Acesso negado. Apenas admins podem criar jogos.' }, { status: 403 });
     }
 

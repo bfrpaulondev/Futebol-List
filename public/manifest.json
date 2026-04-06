@@ -1,0 +1,14 @@
+{
+  "name": "Futebol Bonfim",
+  "short_name": "Bonfim",
+  "description": "Society Futebol Nº5 - Futebol Bonfim",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -23,7 +23,7 @@ export async function GET() {
     }
 
     // Admin: return all receipts. Mensalista: return only own receipts
-    const whereClause = user.role === 'admin' ? {} : { userId: payload.userId };
+    const whereClause = (user.role === 'admin' || user.role === 'master') ? {} : { userId: payload.userId };
 
     const receipts = await db.paymentReceipt.findMany({
       where: whereClause,
