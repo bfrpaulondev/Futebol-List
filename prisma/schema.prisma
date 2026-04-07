@@ -8,52 +8,74 @@ datasource db {
 }
 
 model User {
-  id                   String           @id @default(cuid())
-  email                String           @unique
+  id                   String            @id @default(cuid())
+  email                String            @unique
   passwordHash         String
   name                 String
   phone                String?
   congregation         String?
-  playerType           String           @default("convidado")
-  position             String           @default("ALA")
+  playerType           String            @default("convidado")
+  position             String            @default("ALA")
   avatar               String?
-  role                 String           @default("player")
-  skillsJson           String           @default("{}")
-  overallRating        Float            @default(5.0)
-  gamesPlayed          Int              @default(0)
-  mvpCount             Int              @default(0)
-  notificationsEnabled Boolean          @default(true)
-  isActive             Boolean          @default(true)
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  role                 String            @default("player")
+  skillsJson           String            @default("{}")
+  overallRating        Float             @default(5.0)
+  gamesPlayed          Int               @default(0)
+  mvpCount             Int               @default(0)
+  notificationsEnabled Boolean           @default(true)
+  isActive             Boolean           @default(true)
+  // --- New fields for gamification ---
+  totalGoals           Int               @default(0)
+  totalAssists         Int               @default(0)
+  consecutiveGames     Int               @default(0)
+  bestStreak           Int               @default(0)
+  marketValue          Float             @default(2.50)
+  complaintsReceived   Int               @default(0)
+  complaintsFiled      Int               @default(0)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
-  gameAttendees      GameAttendee[]
-  messagesSent       Message[]
-  suggestions        Suggestion[]
-  ratingsGiven       Rating[]          @relation("Rater")
-  ratingsReceived    Rating[]          @relation("Rated")
-  paymentReceipts    PaymentReceipt[]
-  notifications      Notification[]
-  pushSubscriptions  PushSubscription[]
-  receivedReceipts   PaymentReceipt[]  @relation("ReceiptReviewer")
+  gameAttendees        GameAttendee[]
+  gameStats            GameStat[]
+  messagesSent         Message[]
+  suggestions          Suggestion[]
+  ratingsGiven         Rating[]           @relation("Rater")
+  ratingsReceived      Rating[]           @relation("Rated")
+  paymentReceipts      PaymentReceipt[]
+  notifications        Notification[]
+  pushSubscriptions    PushSubscription[]
+  receivedReceipts     PaymentReceipt[]   @relation("ReceiptReviewer")
+  badges               UserBadge[]
+  complaintsAgainst    Complaint[]        @relation("Complainee")
+  complaintsFiledBy    Complaint[]        @relation("Complainant")
+  marketValueHistory   MarketValueEntry[]
+  playerOfMonthWins    PlayerOfMonth[]
 }
 
 model Game {
-  id                  String         @id @default(cuid())
+  id                  String           @id @default(cuid())
   date                DateTime
-  location            String         @default("Pavilhão Municipal")
-  maxPlayers          Int            @default(12)
-  status              String         @default("open")
+  location            String           @default("Pavilhão Municipal")
+  maxPlayers          Int              @default(12)
+  status              String           @default("open")
   confirmationDeadline DateTime?
   attendees           GameAttendee[]
-  teamsJson           String         @default("{}")
-  scoreA              Int            @default(0)
-  scoreB              Int            @default(0)
+  teamsJson           String           @default("{}")
+  scoreA              Int              @default(0)
+  scoreB              Int              @default(0)
   aiCoachComment      String?
-  ratingsOpen         Boolean        @default(false)
+  ratingsOpen         Boolean          @default(false)
   ratingsCloseAt      DateTime?
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  // --- New fields ---
+  playedAt            DateTime?
+  chronicle           String?
+  chronicleAi         String?
+  mvpId               String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  stats               GameStat[]
+  complaints          Complaint[]
 }
 
 model GameAttendee {
@@ -67,6 +89,23 @@ model GameAttendee {
   arrivedAt   DateTime?
   game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+}
+
+// --- New: Individual player stats per game ---
+model GameStat {
+  id              String   @id @default(cuid())
+  gameId          String
+  userId          String
+  goals           Int      @default(0)
+  assists         Int      @default(0)
+  ownGoals        Int      @default(0)
+  team            String   @default("A")
+  isMvp           Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  game            Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, userId])
 }
@@ -170,4 +209,88 @@ model PushSubscription {
   keysP256dh String
   createdAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- New: Badge system ---
+model Badge {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  icon        String   @default("🏆")
+  category    String   @default("general")
+  tier        String   @default("bronze")
+  createdAt   DateTime @default(now())
+
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id          String   @id @default(cuid())
+  userId      String
+  badgeId     String
+  earnedAt    DateTime @default(now())
+  gameContext String?
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge       Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+// --- New: Bureau de Queixas ---
+model Complaint {
+  id              String   @id @default(cuid())
+  gameId          String?
+  complainantId   String
+  againstId       String
+  description     String
+  category        String   @default("agressao")
+  palestrinhaReply String?
+  createdAt       DateTime @default(now())
+
+  game            Game?    @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  complainant     User     @relation("Complainant", fields: [complainantId], references: [id], onDelete: Cascade)
+  against         User     @relation("Complainee", fields: [againstId], references: [id], onDelete: Cascade)
+}
+
+// --- New: Weekly Reviews ---
+model WeeklyReview {
+  id          String   @id @default(cuid())
+  weekStart   DateTime
+  weekEnd     DateTime
+  content     String
+  aiContent   String
+  statsJson   String   @default("{}")
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+// --- New: Player of the Month ---
+model PlayerOfMonth {
+  id          String   @id @default(cuid())
+  userId      String
+  month       Int
+  year        Int
+  mvpCount    Int      @default(0)
+  avgRating   Float    @default(0)
+  gamesPlayed Int      @default(0)
+  goals       Int      @default(0)
+  speech      String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([month, year])
+}
+
+// --- New: Market Value History ---
+model MarketValueEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  value       Float
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

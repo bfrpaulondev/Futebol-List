@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
@@ -12,19 +12,80 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LogOut, Calendar, Trophy, Settings, CreditCard, ChevronRight } from 'lucide-react';
+import {
+  LogOut,
+  Calendar,
+  Trophy,
+  Settings,
+  CreditCard,
+  ChevronRight,
+  Flame,
+  Target,
+  Award,
+  TrendingUp,
+  MessageSquare,
+  Newspaper,
+  DollarSign,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+
+interface ExtendedUser {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string | null;
+  congregation?: string | null;
+  playerType: string;
+  position: string;
+  avatar: string | null;
+  role: string;
+  skillsJson: string;
+  overallRating: number;
+  gamesPlayed: number;
+  mvpCount: number;
+  notificationsEnabled: boolean;
+  currentStreak?: number;
+  bestStreak?: number;
+  totalGoals?: number;
+  totalAssists?: number;
+  marketValue?: number;
+  badgeCount?: number;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [extendedStats, setExtendedStats] = useState<{
+    currentStreak: number;
+    bestStreak: number;
+    totalGoals: number;
+    totalAssists: number;
+    marketValue: number;
+    badgeCount: number;
+  } | null>(null);
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [congregation, setCongregation] = useState(user?.congregation || '');
   const [position, setPosition] = useState(user?.position || 'ALA');
   const [notifications, setNotifications] = useState(user?.notificationsEnabled ?? true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/users/profile/stats');
+        if (res.ok) {
+          const data = await res.json();
+          setExtendedStats(data);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    fetchStats();
+  }, []);
 
   const skills = user?.skillsJson ? JSON.parse(user.skillsJson) : {};
   const skillLabels: Record<string, string> = {
@@ -113,6 +174,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <CardContent className="p-4">
+            {/* Main Stats Row */}
             <div className="flex items-center justify-around">
               <div className="text-center">
                 <div className="w-14 h-14 mx-auto rounded-full border-2 border-emerald-500/50 flex items-center justify-center mb-1 bg-emerald-500/5">
@@ -129,6 +191,67 @@ export default function ProfilePage() {
                 <span className="text-xs text-zinc-500">MVPs</span>
               </div>
             </div>
+
+            {/* Extended Stats Row */}
+            {extendedStats && (
+              <div className="grid grid-cols-5 gap-2 mt-4 pt-4 border-t border-zinc-800/50">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-0.5">
+                    <Target className="w-3 h-3 text-emerald-400" />
+                    <p className="text-sm font-bold text-white">{extendedStats.totalGoals}</p>
+                  </div>
+                  <span className="text-[10px] text-zinc-500">Golos</span>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-0.5">
+                    <Trophy className="w-3 h-3 text-sky-400" />
+                    <p className="text-sm font-bold text-white">{extendedStats.totalAssists}</p>
+                  </div>
+                  <span className="text-[10px] text-zinc-500">Assist.</span>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-0.5">
+                    <Flame className="w-3 h-3 text-orange-400" />
+                    <p className="text-sm font-bold text-white">{extendedStats.currentStreak}</p>
+                  </div>
+                  <span className="text-[10px] text-zinc-500">Streak</span>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-0.5">
+                    <Award className="w-3 h-3 text-purple-400" />
+                    <p className="text-sm font-bold text-white">{extendedStats.badgeCount}</p>
+                  </div>
+                  <span className="text-[10px] text-zinc-500">Badges</span>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-0.5">
+                    <DollarSign className="w-3 h-3 text-teal-400" />
+                    <p className="text-sm font-bold text-white">{extendedStats.marketValue.toFixed(1)}</p>
+                  </div>
+                  <span className="text-[10px] text-zinc-500">Valor €</span>
+                </div>
+              </div>
+            )}
+
+            {/* Streak Fire Indicator */}
+            {extendedStats && extendedStats.currentStreak >= 3 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-3 text-center"
+              >
+                <motion.span
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ repeat: Infinity, duration: 1 }}
+                  className="text-lg"
+                >
+                  🔥
+                </motion.span>
+                <span className="text-orange-400 text-xs font-medium ml-1">
+                  {extendedStats.currentStreak} jogos seguidos!
+                </span>
+              </motion.div>
+            )}
           </CardContent>
         </div>
       </div>
@@ -227,7 +350,91 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Links */}
+      {/* Quick Access Links */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-zinc-400 mb-2">Explorar</h3>
+
+        <Link href="/badges">
+          <div className="glass-card rounded-2xl p-4 flex items-center justify-between transition-all duration-200 hover:bg-zinc-800/60 group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                <Award className="w-4.5 h-4.5 text-purple-400" />
+              </div>
+              <div>
+                <span className="text-white text-sm font-medium">Conquistas</span>
+                <p className="text-zinc-500 text-xs">As tuas medalhas e badges</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+          </div>
+        </Link>
+
+        <Link href="/complaints">
+          <div className="glass-card rounded-2xl p-4 flex items-center justify-between transition-all duration-200 hover:bg-zinc-800/60 group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                <MessageSquare className="w-4.5 h-4.5 text-rose-400" />
+              </div>
+              <div>
+                <span className="text-white text-sm font-medium">Bureau de Queixas</span>
+                <p className="text-zinc-500 text-xs">Reclama sobre os colegas</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+          </div>
+        </Link>
+
+        <Link href="/reviews">
+          <div className="glass-card rounded-2xl p-4 flex items-center justify-between transition-all duration-200 hover:bg-zinc-800/60 group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Newspaper className="w-4.5 h-4.5 text-amber-400" />
+              </div>
+              <div>
+                <span className="text-white text-sm font-medium">Revista Palestrinha</span>
+                <p className="text-zinc-500 text-xs">Notícias e crónicas</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+          </div>
+        </Link>
+
+        {(user.playerType === 'mensalista' || user.role === 'admin' || user.role === 'master') && (
+          <>
+            <Link href="/hall-of-fame">
+              <div className="glass-card rounded-2xl p-4 flex items-center justify-between transition-all duration-200 hover:bg-zinc-800/60 group cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                    <Trophy className="w-4.5 h-4.5 text-amber-400" />
+                  </div>
+                  <div>
+                    <span className="text-white text-sm font-medium">Hall of Fame</span>
+                    <p className="text-zinc-500 text-xs">Banco de Honra</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+              </div>
+            </Link>
+
+            <Link href="/market">
+              <div className="glass-card rounded-2xl p-4 flex items-center justify-between transition-all duration-200 hover:bg-zinc-800/60 group cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                    <TrendingUp className="w-4.5 h-4.5 text-teal-400" />
+                  </div>
+                  <div>
+                    <span className="text-white text-sm font-medium">Cotação de Mercado</span>
+                    <p className="text-zinc-500 text-xs">O teu valor no mercado</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+              </div>
+            </Link>
+          </>
+        )}
+      </div>
+
+      {/* Functional Links */}
       <div className="space-y-2">
         {user.playerType === 'mensalista' && (
           <Link href="/payments">
