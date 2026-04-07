@@ -146,6 +146,13 @@ async function seedDemoData() {
     throw new Error('Dados de demo já existem (' + existingStats + ' stats encontrados). Apaga primeiro se quiser re-seed.');
   }
 
+  // 0. ENSURE Badge table has 'name' column (migration fix)
+  try {
+    await db.$executeRawUnsafe(`ALTER TABLE "Badge" ADD COLUMN "name" TEXT NOT NULL DEFAULT '';`);
+  } catch (e: any) {
+    // Column already exists - fine
+  }
+
   // 1. SEED BADGES
   const badgeMap = new Map<string, any>();
   for (const def of BADGE_DEFINITIONS) {

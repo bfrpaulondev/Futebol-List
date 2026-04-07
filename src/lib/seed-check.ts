@@ -249,6 +249,7 @@ async function ensureTables() {
     CREATE TABLE IF NOT EXISTS "Badge" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "slug" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
       "description" TEXT NOT NULL,
       "icon" TEXT NOT NULL DEFAULT '🏆',
       "category" TEXT NOT NULL DEFAULT 'general',
