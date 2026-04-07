@@ -18,6 +18,52 @@ export async function ensureSeeded(): Promise<void> {
   }
 }
 
+async function ensureColumns() {
+  // Add missing columns to User table for existing databases
+  const userColumns = [
+    `"totalGoals" INTEGER NOT NULL DEFAULT 0`,
+    `"totalAssists" INTEGER NOT NULL DEFAULT 0`,
+    `"consecutiveGames" INTEGER NOT NULL DEFAULT 0`,
+    `"bestStreak" INTEGER NOT NULL DEFAULT 0`,
+    `"marketValue" REAL NOT NULL DEFAULT 2.5`,
+    `"complaintsReceived" INTEGER NOT NULL DEFAULT 0`,
+    `"complaintsFiled" INTEGER NOT NULL DEFAULT 0`,
+  ];
+
+  for (const col of userColumns) {
+    const colName = col.split('"')[1];
+    try {
+      await db.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN ${col};`);
+      console.log(`  ✅ Added column User.${colName}`);
+    } catch (e: any) {
+      // Column already exists - that's fine
+      if (!e.message?.includes('duplicate column')) {
+        console.warn(`  ⚠️ Column User.${colName}:`, e.message?.slice(0, 80));
+      }
+    }
+  }
+
+  // Add missing columns to Game table for existing databases
+  const gameColumns = [
+    `"playedAt" DATETIME`,
+    `"chronicle" TEXT`,
+    `"chronicleAi" TEXT`,
+    `"mvpId" TEXT`,
+  ];
+
+  for (const col of gameColumns) {
+    const colName = col.split('"')[1];
+    try {
+      await db.$executeRawUnsafe(`ALTER TABLE "Game" ADD COLUMN ${col};`);
+      console.log(`  ✅ Added column Game.${colName}`);
+    } catch (e: any) {
+      if (!e.message?.includes('duplicate column')) {
+        console.warn(`  ⚠️ Column Game.${colName}:`, e.message?.slice(0, 80));
+      }
+    }
+  }
+}
+
 async function ensureTables() {
   const sql = `
     CREATE TABLE IF NOT EXISTS "User" (
@@ -37,9 +83,18 @@ async function ensureTables() {
       "mvpCount" INTEGER NOT NULL DEFAULT 0,
       "notificationsEnabled" BOOLEAN NOT NULL DEFAULT 1,
       "isActive" BOOLEAN NOT NULL DEFAULT 1,
+      "totalGoals" INTEGER NOT NULL DEFAULT 0,
+      "totalAssists" INTEGER NOT NULL DEFAULT 0,
+      "consecutiveGames" INTEGER NOT NULL DEFAULT 0,
+      "bestStreak" INTEGER NOT NULL DEFAULT 0,
+      "marketValue" REAL NOT NULL DEFAULT 2.5,
+      "complaintsReceived" INTEGER NOT NULL DEFAULT 0,
+      "complaintsFiled" INTEGER NOT NULL DEFAULT 0,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL
     );
+    CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
+
     CREATE TABLE IF NOT EXISTS "Game" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "date" DATETIME NOT NULL,
@@ -53,9 +108,14 @@ async function ensureTables() {
       "aiCoachComment" TEXT,
       "ratingsOpen" BOOLEAN NOT NULL DEFAULT 0,
       "ratingsCloseAt" DATETIME,
+      "playedAt" DATETIME,
+      "chronicle" TEXT,
+      "chronicleAi" TEXT,
+      "mvpId" TEXT,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL
     );
+
     CREATE TABLE IF NOT EXISTS "GameAttendee" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "gameId" TEXT NOT NULL,
@@ -69,6 +129,22 @@ async function ensureTables() {
       CONSTRAINT "GameAttendee_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
     CREATE UNIQUE INDEX IF NOT EXISTS "GameAttendee_gameId_userId_key" ON "GameAttendee"("gameId", "userId");
+
+    CREATE TABLE IF NOT EXISTS "GameStat" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "gameId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "goals" INTEGER NOT NULL DEFAULT 0,
+      "assists" INTEGER NOT NULL DEFAULT 0,
+      "ownGoals" INTEGER NOT NULL DEFAULT 0,
+      "team" TEXT NOT NULL DEFAULT 'A',
+      "isMvp" BOOLEAN NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "GameStat_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "GameStat_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS "GameStat_gameId_userId_key" ON "GameStat"("gameId", "userId");
+
     CREATE TABLE IF NOT EXISTS "Message" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "content" TEXT NOT NULL,
@@ -81,6 +157,7 @@ async function ensureTables() {
       "updatedAt" DATETIME NOT NULL,
       CONSTRAINT "Message_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
+
     CREATE TABLE IF NOT EXISTS "Transaction" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "type" TEXT NOT NULL,
@@ -92,6 +169,7 @@ async function ensureTables() {
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL
     );
+
     CREATE TABLE IF NOT EXISTS "Suggestion" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "title" TEXT NOT NULL,
@@ -108,6 +186,7 @@ async function ensureTables() {
       "updatedAt" DATETIME NOT NULL,
       CONSTRAINT "Suggestion_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
+
     CREATE TABLE IF NOT EXISTS "Rating" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "gameId" TEXT NOT NULL,
@@ -119,6 +198,7 @@ async function ensureTables() {
       CONSTRAINT "Rating_raterId_fkey" FOREIGN KEY ("raterId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
       CONSTRAINT "Rating_ratedPlayerId_fkey" FOREIGN KEY ("ratedPlayerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
+
     CREATE TABLE IF NOT EXISTS "ColeteSchedule" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "year" INTEGER NOT NULL,
@@ -126,6 +206,7 @@ async function ensureTables() {
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL
     );
+
     CREATE TABLE IF NOT EXISTS "PaymentReceipt" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "userId" TEXT NOT NULL,
@@ -142,6 +223,7 @@ async function ensureTables() {
       CONSTRAINT "PaymentReceipt_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
       CONSTRAINT "PaymentReceipt_reviewedById_fkey" FOREIGN KEY ("reviewedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
     );
+
     CREATE TABLE IF NOT EXISTS "Notification" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "userId" TEXT NOT NULL,
@@ -152,6 +234,7 @@ async function ensureTables() {
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
+
     CREATE TABLE IF NOT EXISTS "PushSubscription" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "userId" TEXT NOT NULL,
@@ -162,6 +245,77 @@ async function ensureTables() {
       CONSTRAINT "PushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
     CREATE UNIQUE INDEX IF NOT EXISTS "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint");
+
+    CREATE TABLE IF NOT EXISTS "Badge" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "slug" TEXT NOT NULL,
+      "description" TEXT NOT NULL,
+      "icon" TEXT NOT NULL DEFAULT '🏆',
+      "category" TEXT NOT NULL DEFAULT 'general',
+      "tier" TEXT NOT NULL DEFAULT 'bronze',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS "Badge_slug_key" ON "Badge"("slug");
+
+    CREATE TABLE IF NOT EXISTS "UserBadge" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "badgeId" TEXT NOT NULL,
+      "earnedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "gameContext" TEXT,
+      CONSTRAINT "UserBadge_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "UserBadge_badgeId_fkey" FOREIGN KEY ("badgeId") REFERENCES "Badge" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS "UserBadge_userId_badgeId_key" ON "UserBadge"("userId", "badgeId");
+
+    CREATE TABLE IF NOT EXISTS "Complaint" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "gameId" TEXT,
+      "complainantId" TEXT NOT NULL,
+      "againstId" TEXT NOT NULL,
+      "description" TEXT NOT NULL,
+      "category" TEXT NOT NULL DEFAULT 'agressao',
+      "palestrinhaReply" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Complaint_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+      CONSTRAINT "Complaint_complainantId_fkey" FOREIGN KEY ("complainantId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "Complaint_againstId_fkey" FOREIGN KEY ("againstId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS "WeeklyReview" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "weekStart" DATETIME NOT NULL,
+      "weekEnd" DATETIME NOT NULL,
+      "content" TEXT NOT NULL,
+      "aiContent" TEXT NOT NULL,
+      "statsJson" TEXT NOT NULL DEFAULT '{}',
+      "publishedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS "PlayerOfMonth" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "month" INTEGER NOT NULL,
+      "year" INTEGER NOT NULL,
+      "mvpCount" INTEGER NOT NULL DEFAULT 0,
+      "avgRating" REAL NOT NULL DEFAULT 0,
+      "gamesPlayed" INTEGER NOT NULL DEFAULT 0,
+      "goals" INTEGER NOT NULL DEFAULT 0,
+      "speech" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PlayerOfMonth_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS "PlayerOfMonth_month_year_key" ON "PlayerOfMonth"("month", "year");
+
+    CREATE TABLE IF NOT EXISTS "MarketValueEntry" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "value" REAL NOT NULL,
+      "reason" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "MarketValueEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
   `;
 
   const statements = sql.split(';').filter(s => s.trim().length > 0);
@@ -174,6 +328,9 @@ async function ensureTables() {
       }
     }
   }
+
+  // Migrate existing tables that might be missing new columns
+  await ensureColumns();
 }
 
 async function seedDatabase() {
