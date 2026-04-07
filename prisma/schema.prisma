@@ -34,6 +34,7 @@ model User {
   ratingsReceived    Rating[]          @relation("Rated")
   paymentReceipts    PaymentReceipt[]
   notifications      Notification[]
+  pushSubscriptions  PushSubscription[]
   receivedReceipts   PaymentReceipt[]  @relation("ReceiptReviewer")
 }
 
@@ -159,4 +160,14 @@ model Notification {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @unique
+  keysAuth   String
+  keysP256dh String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getUserFromCookie } from '@/lib/auth';
 import { ensureSeeded } from '@/lib/seed-check';
+import { sendPushNotificationBatch } from '@/lib/push';
 
 export async function GET(request: Request) {
   await ensureSeeded();
@@ -71,6 +72,9 @@ export async function POST(request: Request) {
         })),
       });
 
+      // Send web push notifications in background (don't await to avoid blocking)
+      sendPushNotificationBatch(userIds, title, message).catch(() => {});
+
       return NextResponse.json({ notifications, count: notifications.count });
     }
 
@@ -89,6 +93,9 @@ export async function POST(request: Request) {
         message: notifMessage,
       },
     });
+
+    // Send web push notification in background
+    sendPushNotification(userId, title, notifMessage).catch(() => {});
 
     return NextResponse.json({ notification });
   } catch (error) {

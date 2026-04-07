@@ -23,7 +23,6 @@ export default function ProfilePage() {
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [congregation, setCongregation] = useState(user?.congregation || '');
-  const [playerType, setPlayerType] = useState(user?.playerType || 'convidado');
   const [position, setPosition] = useState(user?.position || 'ALA');
   const [notifications, setNotifications] = useState(user?.notificationsEnabled ?? true);
 
@@ -46,7 +45,6 @@ export default function ProfilePage() {
           name: name.trim(),
           phone: phone.trim() || null,
           congregation: congregation.trim() || null,
-          playerType,
           position,
           notificationsEnabled: notifications,
         }),
@@ -200,33 +198,19 @@ export default function ProfilePage() {
                 className="bg-zinc-800/80 border-zinc-700/50 text-white placeholder:text-zinc-500 transition-all duration-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-zinc-300 text-sm">Tipo</Label>
-                <Select value={playerType} onValueChange={setPlayerType}>
-                  <SelectTrigger className="bg-zinc-800/80 border-zinc-700/50 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    <SelectItem value="mensalista" className="text-white">Mensalista</SelectItem>
-                    <SelectItem value="convidado" className="text-white">Convidado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-zinc-300 text-sm">Posição</Label>
-                <Select value={position} onValueChange={setPosition}>
-                  <SelectTrigger className="bg-zinc-800/80 border-zinc-700/50 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
-                    <SelectItem value="GR" className="text-white">GR</SelectItem>
-                    <SelectItem value="DEF" className="text-white">DEF</SelectItem>
-                    <SelectItem value="ALA" className="text-white">ALA</SelectItem>
-                    <SelectItem value="PIVO" className="text-white">PIVO</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-1">
+              <Label className="text-zinc-300 text-sm">Posição</Label>
+              <Select value={position} onValueChange={setPosition}>
+                <SelectTrigger className="bg-zinc-800/80 border-zinc-700/50 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectItem value="GR" className="text-white">GR</SelectItem>
+                  <SelectItem value="DEF" className="text-white">DEF</SelectItem>
+                  <SelectItem value="ALA" className="text-white">ALA</SelectItem>
+                  <SelectItem value="PIVO" className="text-white">PIVO</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between">
               <Label className="text-zinc-300 text-sm">Notificações</Label>

@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { chatCompletion } from '@/lib/openai';
+import { sendPushNotificationBatch } from '@/lib/push';
 
 export type PalestrinhaEvent = 'confirm' | 'cancel' | 'game_created' | 'draw_done' | 'payment';
 
@@ -80,6 +81,11 @@ Responde APENAS com a mensagem, sem aspas.`,
     await db.notification.createMany({
       data: notificationsData,
     });
+
+    // Send web push notifications in background (don't await to avoid blocking)
+    const pushTitle = titleMap[event];
+    const pushUserIds = users.map((u) => u.id);
+    sendPushNotificationBatch(pushUserIds, pushTitle, message).catch(() => {});
   } catch (error) {
     console.error('Palestrinha notification error:', error);
     // Don't throw - notification failures shouldn't break the main flow

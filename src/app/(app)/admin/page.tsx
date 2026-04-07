@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Crown, CheckCircle2, XCircle, Bell, Send, Clock, CreditCard, Users, Calendar, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Crown, CheckCircle2, XCircle, Bell, Send, Clock, CreditCard, Users, Calendar, MessageSquare, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface UserItem {
@@ -181,6 +181,24 @@ export default function AdminPage() {
       setRejectingId(null);
       setRejectNote('');
       await fetchData();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleTogglePlayerType = async (userId: string, currentType: string) => {
+    const newType = currentType === 'mensalista' ? 'convidado' : 'mensalista';
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/player-type`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerType: newType }),
+      });
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, playerType: newType } : u))
+        );
+      }
     } catch {
       // ignore
     }
@@ -549,13 +567,20 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${
-                    u.playerType === 'mensalista'
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
-                  }`}>
-                    {u.playerType}
-                  </Badge>
+                  <button
+                    onClick={() => handleTogglePlayerType(u.id, u.playerType)}
+                    className="group/badge flex items-center gap-1"
+                    title={u.playerType === 'mensalista' ? 'Mudar para Convidado' : 'Mudar para Mensalista'}
+                  >
+                    <Badge variant="outline" className={`text-[10px] px-2 py-0.5 cursor-pointer transition-all duration-200 ${
+                      u.playerType === 'mensalista'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover/badge:bg-sky-500/10 group-hover/badge:text-sky-400 group-hover/badge:border-sky-500/20'
+                        : 'bg-sky-500/10 text-sky-400 border-sky-500/20 group-hover/badge:bg-emerald-500/10 group-hover/badge:text-emerald-400 group-hover/badge:border-emerald-500/20'
+                    }`}>
+                      {u.playerType}
+                      <RefreshCw className="w-2.5 h-2.5 ml-1 opacity-0 group-hover/badge:opacity-100 transition-opacity duration-200" />
+                    </Badge>
+                  </button>
                   <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-zinc-800/80 text-zinc-400 border-zinc-700/50">
                     {u.position}
                   </Badge>

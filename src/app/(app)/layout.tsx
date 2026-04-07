@@ -8,6 +8,7 @@ import { Bell } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import PwaInstallModal from '@/components/pwa-install-modal';
+import PushManager from '@/components/push-manager';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -107,6 +108,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-zinc-950">
       {/* PWA Install Modal */}
       <PwaInstallModal />
+      {/* Push Notification Manager */}
+      <PushManager />
       {/* Top gradient accent line */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 z-[60]" />
 
