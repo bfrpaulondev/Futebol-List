@@ -214,7 +214,7 @@ export default function ProfilePage() {
                     <Flame className="w-3 h-3 text-orange-400" />
                     <p className="text-sm font-bold text-white">{extendedStats.currentStreak}</p>
                   </div>
-                  <span className="text-[10px] text-zinc-500">Streak</span>
+                  <span className="text-[10px] text-zinc-500">Racha</span>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-0.5">
@@ -408,7 +408,7 @@ export default function ProfilePage() {
                     <Trophy className="w-4.5 h-4.5 text-amber-400" />
                   </div>
                   <div>
-                    <span className="text-white text-sm font-medium">Hall of Fame</span>
+                    <span className="text-white text-sm font-medium">Salão da Fama</span>
                     <p className="text-zinc-500 text-xs">Banco de Honra</p>
                   </div>
                 </div>
@@ -488,7 +488,7 @@ export default function ProfilePage() {
                   <Settings className="w-4.5 h-4.5 text-rose-400" />
                 </div>
                 <div>
-                  <span className="text-white text-sm font-medium">Admin Painel</span>
+                  <span className="text-white text-sm font-medium">Painel Admin</span>
                   <p className="text-zinc-500 text-xs">Gestão do clube</p>
                 </div>
               </div>

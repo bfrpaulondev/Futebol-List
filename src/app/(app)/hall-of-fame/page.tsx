@@ -209,7 +209,7 @@ export default function HallOfFamePage() {
           <Trophy className="w-8 h-8 text-amber-400 mx-auto" />
         </motion.div>
         <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 bg-clip-text text-transparent">
-          Hall of Fame
+          Salão da Fama
         </h1>
         <p className="text-zinc-500 text-sm mt-0.5">🏆 Banco de Honra do Futebol Bonfim</p>
       </div>
@@ -229,7 +229,7 @@ export default function HallOfFamePage() {
         <div>
           <h2 className="text-base font-semibold text-white mb-3 text-center flex items-center justify-center gap-2">
             <Crown className="w-4 h-4 text-amber-400" />
-            Top 3 Geral
+            Top 3 Geral 🥇
           </h2>
           <div className="flex items-end justify-center gap-3">
             {topPlayers.length >= 2 && <PodiumCard player={topPlayers[1]} position={2} />}

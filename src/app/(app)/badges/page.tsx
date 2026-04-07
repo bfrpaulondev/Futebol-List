@@ -43,7 +43,7 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
 
 const FILTER_TABS = [
   { value: 'all', label: 'Todas' },
-  { value: 'streak', label: 'Streak' },
+  { value: 'streak', label: 'Racha' },
   { value: 'goals', label: 'Golos' },
   { value: 'mvp', label: 'MVP' },
   { value: 'special', label: 'Especiais' },
@@ -128,7 +128,7 @@ export default function BadgesPage() {
                 </motion.span>
               )}
             </p>
-            <p className="text-[10px] text-zinc-500">Streak</p>
+            <p className="text-[10px] text-zinc-500">Racha</p>
           </div>
           <div className="glass-card rounded-xl p-3 text-center">
             <div className="w-8 h-8 mx-auto rounded-lg bg-amber-500/10 flex items-center justify-center mb-1">
@@ -271,7 +271,7 @@ export default function BadgesPage() {
             <p className="text-zinc-400 text-sm">{selectedBadge?.description}</p>
             <div className="flex items-center justify-center gap-2">
               <Badge variant="outline" className="text-xs bg-zinc-800 text-zinc-300 border-zinc-700">
-                {selectedBadge?.category === 'streak' ? '🔥 Streak' :
+                {selectedBadge?.category === 'streak' ? '🔥 Racha' :
                  selectedBadge?.category === 'goals' ? '⚽ Golos' :
                  selectedBadge?.category === 'mvp' ? '⭐ MVP' :
                  selectedBadge?.category === 'special' ? '✨ Especial' :

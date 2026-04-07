@@ -258,7 +258,7 @@ export default function MarketPage() {
             { icon: '⚽', text: 'Golos marcados aumentam o valor' },
             { icon: '🎯', text: 'Assistências contam positivamente' },
             { icon: '⭐', text: 'MVPs dão um grande boost' },
-            { icon: '🔥', text: 'Streaks longos valorizam o jogador' },
+            { icon: '🔥', text: 'Rachas longos valorizam o jogador' },
             { icon: '📅', text: 'Presença regular mantém o valor' },
             { icon: '📉', text: 'Faltar jogos faz o valor descer' },
           ].map((item) => (

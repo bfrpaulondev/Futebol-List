@@ -31,7 +31,7 @@ const MORE_ITEMS: NavItem[] = [
   { href: '/complaints', label: 'Bureau de Queixas', icon: '📋' },
   { href: '/reviews', label: 'Revista Palestrinha', icon: '📰' },
   { href: '/leaderboard', label: 'Ranking', icon: '🏅' },
-  { href: '/hall-of-fame', label: 'Hall of Fame', icon: '🏆', mensalOnly: true },
+  { href: '/hall-of-fame', label: 'Salão da Fama', icon: '🏆', mensalOnly: true },
   { href: '/market', label: 'Cotação de Mercado', icon: '💰', mensalOnly: true },
   { href: '/game-stats', label: 'Estatísticas do Jogo', icon: '📊', adminOnly: true },
 ];
