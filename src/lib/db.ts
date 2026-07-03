@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
+import { PrismaLibSQL } from '@prisma/adapter-libsql';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -29,18 +30,13 @@ function createPrismaClient(): PrismaClient {
   const isTurso = databaseUrl.startsWith('libsql://') || databaseUrl.startsWith('https://')
 
   if (isTurso) {
-    // Lazy-require the adapter so the local SQLite path doesn't pay the cost
-    // and doesn't fail if the optional peer deps are somehow missing.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createClient } = require('@libsql/client')
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PrismaLibSQL } = require('@prisma/adapter-libsql')
-
-    const libsql = createClient({
+    // PrismaLibSQL (v6) takes a Config object { url, authToken }, NOT a
+    // pre-built libsql Client. Passing a Client here causes URL_INVALID
+    // because the adapter reads config.url which is undefined on a Client.
+    const adapter = new PrismaLibSQL({
       url: databaseUrl,
       authToken: process.env.TURSO_AUTH_TOKEN || undefined,
     })
-    const adapter = new PrismaLibSQL(libsql)
     return new PrismaClient({
       adapter,
       log: process.env.NODE_ENV === 'production' ? [] : ['query'],
