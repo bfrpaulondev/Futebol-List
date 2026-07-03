@@ -144,7 +144,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Image src="/logo.png" alt="Futebol Bonfim" width={40} height={40} className="rounded-xl animate-pulse" />
+          <Image src="/logo.png" alt="Futebol Bonfim" width={40} height={40} priority className="rounded-xl animate-pulse" />
           <div className="text-zinc-500 text-sm">A carregar...</div>
         </div>
       </div>

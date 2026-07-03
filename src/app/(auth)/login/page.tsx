@@ -49,7 +49,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo Area */}
         <div className="text-center mb-8">
-          <Image src="/logo.png" alt="Futebol Bonfim" width={80} height={80} className="rounded-2xl mx-auto mb-4 shadow-lg shadow-emerald-500/20" />
+          <Image src="/logo.png" alt="Futebol Bonfim" width={80} height={80} priority className="rounded-2xl mx-auto mb-4 shadow-lg shadow-emerald-500/20" />
           <h1 className="text-3xl font-bold text-white tracking-tight">Futebol Bonfim</h1>
           <p className="text-zinc-500 mt-1 text-sm">Gestão do Society Futebol Nº5</p>
         </div>
