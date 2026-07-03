@@ -76,23 +76,113 @@ Gera `.next/standalone` (servidor Node.js otimizado) com assets estáticos copia
 >
 > O GitHub Pages serve apenas ficheiros estáticos. Esta app é full-stack: tem API routes (serverless), autenticação server-side (JWT + cookies httpOnly + bcrypt), base de dados SQLite (Prisma) e service worker. Nenhuma destas funcionalidades funciona em hosting puramente estático.
 
-### Recomendado: Vercel
+> 🚨 **CRÍTICO — Problema de persistência em serverless (Vercel/Netlify)**
+>
+> Se a app for deployada num ambiente serverless (Vercel, Netlify) com SQLite **local** (`file:...`), **TODOS os dados são perdidos a cada cold start**:
+> - Mensagens de chat desaparecem
+> - Contas criadas pelos utilizadores desaparecem (não conseguem fazer login novamente)
+> - Jogos lançados, confirmações de presença e outras ações não persistem
+>
+> Isto acontece porque o filesystem é efémero nesses ambientes. A solução é usar **Turso (libSQL)** — um SQLite hosted na nuvem, persistente em serverless. As instruções completas estão abaixo.
+
+### Backend de base de dados — dois modos (auto-deteção)
+
+A app suporta **automaticamente** dois backends, selecionados pelo formato do `DATABASE_URL`:
+
+| `DATABASE_URL` | Modo | Quando usar |
+|----------------|------|-------------|
+| `file:...` | SQLite local | Desenvolvimento local (persiste no disco) |
+| `libsql://...` ou `https://...` | Turso / libSQL | **Produção serverless (Vercel)** — persiste na nuvem |
+
+A deteção é feita em `src/lib/db.ts`. Não é preciso mudar código — só as variáveis de ambiente.
+
+### Configurar Turso (passo a passo) — OBRIGATÓRIO para Vercel
+
+1. **Criar conta Turso** (gratuito, sem cartão): https://app.turso.tech
+2. **Criar uma base de dados**:
+   ```bash
+   # Instalar a CLI do Turso (opcional, também dá pela web)
+   curl -sSfL https://get.tur.so/install.sh | bash
+   
+   # Login
+   turso auth login
+   
+   # Criar base de dados
+   turso db create futebol-bonfim
+   
+   # Obter a URL de ligação
+   turso db show futebol-bonfim --url
+   # -> algo como: libsql://futebol-bonfim-teu-usuario.turso.io
+   
+   # Criar um token de acesso
+   turso db tokens create futebol-bonfim
+   # -> uma string longa de caracteres
+   ```
+3. **Popular a base de dados** com o schema (a partir do repositório local):
+   ```bash
+   # Na pasta do projeto, com a URL e token do Turso:
+   DATABASE_URL="libsql://futebol-bonfim-teu-usuario.turso.io" \
+   TURSO_AUTH_TOKEN="o-teu-token" \
+   npx prisma db push
+   ```
+   Isto cria todas as tabelas. A app auto-seeda com dados de demonstração na primeira chamada à API.
+4. **Configurar no Vercel** (Settings → Environment Variables):
+   - `DATABASE_URL` = `libsql://futebol-bonfim-teu-usuario.turso.io`
+   - `TURSO_AUTH_TOKEN` = o token criado no passo 2
+   - `JWT_SECRET` = uma string aleatória forte (ex: `openssl rand -hex 32`)
+   - `OPENAI_API_KEY` = (opcional) chave OpenAI para features do Palestrinha
+5. **Fazer redeploy** no Vercel.
+
+### Verificar o backend ativo em produção
+
+Depois do deploy, visitar:
+
+```
+https://a-teu-app.vercel.app/api/health
+```
+
+Retorna JSON com o modo ativo:
+```json
+{
+  "status": "ok",
+  "database": { "mode": "turso", "reachable": true, "userCount": 13 },
+  "warning": null
+}
+```
+
+Se `mode` for `"sqlite-local"` em produção, o endpoint retorna um `warning` a indicar que os dados serão perdidos. **Não ignorar este warning.**
+
+### Vercel (recomendado)
 
 1. Importar o repositório em [vercel.com](https://vercel.com)
 2. Framework preset: **Next.js**
 3. Build command: `npm run build` (auto-detectado)
-4. Variáveis de ambiente (Settings → Environment Variables):
-   - `DATABASE_URL` — usar Turso (libSQL) ou um SQLite persistente. SQLite local NÃO persiste em serverless.
-   - `OPENAI_API_KEY` — opcional (features de IA têm fallback graceful sem chave)
-   - `JWT_SECRET` — definir um secret forte (senão usa o default, **não recomendado em produção**)
+4. Configurar as variáveis de ambiente conforme a secção "Configurar Turso" acima
 5. Deploy
+6. Verificar `/api/health` — deve mostrar `mode: "turso"`
 
-> **Nota sobre SQLite em serverless**: o SQLite local (`file:...`) perde dados em cada cold start em plataformas serverless (Vercel/Netlify). Para produção usar [Turso](https://turso.tech) (libSQL compatível com Prisma) ou outra base de dados externa. O schema Prisma já usa `@prisma/adapter-libsql` disponível nas dependências.
+### Alternativas (VPS com Node.js runtime)
 
-### Alternativas
+Em **Render / Railway / Fly.io / VPS próprio**, o filesystem é persistente, pelo que SQLite local (`file:...`) funciona sem Turso:
 
-- **Render / Railway / Fly.io**: VPS com Node.js runtime — SQLite local persiste.
-- **Docker**: usar o build standalone (`node .next/standalone/server.js`).
+1. Configurar `DATABASE_URL="file:../db/custom.db"` (ou path absoluto persistente)
+2. `npm run build` → gera `.next/standalone`
+3. `npm run start` (ou `node .next/standalone/server.js`)
+4. Na primeira chamada à API, a base de dados é criada e seedada automaticamente.
+
+### Docker
+
+Usar o build standalone:
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY .next/standalone ./
+COPY .next/standalone/.next ./.next
+COPY public ./public
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+Configurar as mesmas variáveis de ambiente (Turso para persistência multi-instância).
 
 ## Segurança
 

@@ -34,7 +34,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   logout: () => {
-    fetch('/api/auth/logout', { method: 'POST' });
+    // Await the server-side cookie clear before clearing local state so that
+    // any subsequent navigation (e.g. redirect to /login) happens with the
+    // cookie already gone. Fire-and-forget here previously caused a race
+    // where the middleware could still see the old cookie on redirect.
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     set({ user: null, isLoading: false });
   },
 

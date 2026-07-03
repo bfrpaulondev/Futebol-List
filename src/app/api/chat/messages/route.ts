@@ -20,11 +20,13 @@ export async function GET() {
           select: { id: true, name: true, avatar: true },
         },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: 50,
     });
 
-    return NextResponse.json({ messages });
+    // Reverse so the client receives them in chronological order (oldest first)
+    // while still only loading the most recent 50 messages.
+    return NextResponse.json({ messages: messages.reverse() });
   } catch (error) {
     console.error('Get messages error:', error);
     return NextResponse.json({ error: 'Erro ao buscar mensagens' }, { status: 500 });

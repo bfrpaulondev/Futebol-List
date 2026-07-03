@@ -59,3 +59,20 @@ export const COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60,
   path: '/',
 };
+
+/**
+ * Options used when clearing the auth cookie on logout.
+ * Mirrors COOKIE_OPTIONS but with maxAge: 0 and an empty value so the browser
+ * deletes the cookie immediately. `path` must match the one used when setting
+ * the cookie, otherwise the browser will not delete it (a common cause of
+ * "cannot log in again after logout" bugs).
+ */
+export const COOKIE_CLEAR_OPTIONS = {
+  name: COOKIE_OPTIONS.name,
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 0,
+  expires: new Date(0),
+  path: '/',
+};
